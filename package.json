@@ -13,7 +13,6 @@
     "@supabase/supabase-js": "^2.89.0",
     "@vercel/node": "^5.5.16",
     "dotenv": "^17.2.3",
-    "mysql2": "^3.16.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

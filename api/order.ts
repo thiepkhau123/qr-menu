@@ -1,27 +1,45 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import mysql from "mysql2/promise";
+import { createClient } from '@supabase/supabase-js'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.VITE_SUPABASE_ANON_KEY!
+)
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  if (req.method !== "POST") {
-    return res.status(405).end();
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { table, items, total } = req.body;
+  try {
+    const { table_number, items, total } = req.body
 
-  const db = await mysql.createConnection({
-    host: process.env.DB_HOST as string,
-    user: process.env.DB_USER as string,
-    password: process.env.DB_PASS as string,
-    database: process.env.DB_NAME as string,
-  });
+    if (!table_number || !items || !total) {
+      return res.status(400).json({ error: 'Missing data' })
+    }
 
-  await db.execute(
-    "INSERT INTO orders (table_number, items, total) VALUES (?, ?, ?)",
-    [table, JSON.stringify(items), total]
-  );
+    const { error } = await supabase
+      .from('orders')
+      .insert([
+        {
+          table_number,
+          items,
+          total,
+          status: 'pending',
+        },
+      ])
 
-  res.status(200).json({ success: true });
+    if (error) {
+      console.error('Supabase error:', error)
+      return res.status(500).json({ error: error.message })
+    }
+
+    return res.status(200).json({ success: true })
+  } catch (err: any) {
+    console.error('Server error:', err)
+    return res.status(500).json({ error: 'Server crashed' })
+  }
 }
