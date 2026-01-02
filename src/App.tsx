@@ -41,11 +41,30 @@ export default function App() {
     fetchData()
   }, [])
 
-  const filteredMenu = menu.filter(item => {
-    const matchCat = selectedCat === 'Tất cả' || item.category === selectedCat
-    const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchCat && matchSearch
-  })
+  const filteredMenu = menu
+    .filter(item => {
+      const matchCat = selectedCat === 'Tất cả' || item.category === selectedCat
+      const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      return matchCat && matchSearch
+    })
+    .sort((a, b) => {
+      // Nếu đang chọn một danh mục cụ thể (không phải 'Tất cả'), không cần sắp xếp lại
+      if (selectedCat !== 'Tất cả') return 0;
+
+      // Định nghĩa các danh mục ưu tiên
+      const priority = ['mì cay', 'lẩu',];
+
+      const aCat = a.category?.toLowerCase() || '';
+      const bCat = b.category?.toLowerCase() || '';
+
+      const aIsPriority = priority.some(p => aCat.includes(p));
+      const bIsPriority = priority.some(p => bCat.includes(p));
+
+      // Đưa các món ưu tiên lên trước
+      if (aIsPriority && !bIsPriority) return -1;
+      if (!aIsPriority && bIsPriority) return 1;
+      return 0;
+    });
 
   const totalPrice = menu.reduce((s, p) => s + (cart[p.id] || 0) * p.price, 0)
 
@@ -79,15 +98,15 @@ export default function App() {
   return (
     // Max-w-5xl cho phép hiển thị rộng hơn trên PC
     <div className="max-w-5xl mx-auto min-h-screen bg-gray-50 pb-60 font-sans p-4 relative transition-all">
-      
+
       {/* HEADER: Gọn gàng trên Mobile, rộng rãi trên Web */}
       <header className="flex flex-row justify-between items-center mb-6 gap-4 sticky top-0 bg-gray-50/80 backdrop-blur-md z-40 py-2">
         <div className="flex flex-col">
           <h1 className="font-black text-orange-600 italic text-xl md:text-3xl tracking-tighter leading-none uppercase">NHƯ NGỌC QUÁN 🌶️</h1>
           <span className="text-[10px] md:text-xs font-bold text-gray-400 mt-1 uppercase tracking-widest bg-white w-fit px-2 py-0.5 rounded-full shadow-sm">Bàn: {table}</span>
         </div>
-        <button 
-          onClick={() => setShowHistory(true)} 
+        <button
+          onClick={() => setShowHistory(true)}
           className="bg-gray-900 text-white px-3 py-2 md:px-6 md:py-3 rounded-2xl shadow-lg text-[10px] md:text-sm font-black active:scale-95 transition-all flex items-center gap-2"
         >
           <span>ĐƠN ĐÃ ĐẶT</span>
@@ -98,8 +117,8 @@ export default function App() {
       {/* SEARCH & CATEGORY: Group lại cho PC dễ nhìn */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="md:col-span-1 relative text-gray-400 focus-within:text-orange-500">
-          <input 
-            type="text" placeholder="Tìm món ăn nhanh..." 
+          <input
+            type="text" placeholder="Tìm món ăn nhanh..."
             className="w-full p-4 pl-12 bg-white rounded-2xl shadow-sm border-none text-sm focus:ring-2 focus:ring-orange-500 text-gray-800"
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -137,8 +156,8 @@ export default function App() {
               <div className="bg-orange-50/50 p-3 rounded-[1.5rem] mb-4 border border-orange-100">
                 <p className="text-[10px] font-black text-orange-400 mb-2 uppercase tracking-widest text-center">Chọn độ cay (0-7)</p>
                 <div className="grid grid-cols-4 gap-1">
-                  {[0,1,2,3,4,5,6,7].map(l => (
-                    <button key={l} onClick={() => setSpicyLevels({...spicyLevels, [p.id]: l})} 
+                  {[0, 1, 2, 3, 4, 5, 6, 7].map(l => (
+                    <button key={l} onClick={() => setSpicyLevels({ ...spicyLevels, [p.id]: l })}
                       className={`h-9 rounded-xl text-xs font-black transition-all ${(spicyLevels[p.id] || 0) === l ? 'bg-red-600 text-white shadow-md' : 'bg-white border border-orange-100 text-gray-400'}`}>
                       {l}
                     </button>
@@ -146,10 +165,10 @@ export default function App() {
                 </div>
               </div>
             )}
-            
+
             <div className="mt-auto flex items-center gap-2">
               {cart[p.id] > 0 && (
-                <button 
+                <button
                   onClick={() => {
                     const newQty = cart[p.id] - 1;
                     if (newQty <= 0) {
@@ -160,11 +179,10 @@ export default function App() {
                 >−</button>
               )}
 
-              <button 
-                onClick={() => setCart({...cart, [p.id]: (cart[p.id]||0)+1})} 
-                className={`flex-1 h-14 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 ${
-                  cart[p.id] > 0 ? 'bg-green-600 text-white' : 'bg-orange-500 text-white shadow-orange-100'
-                } active:scale-95 shadow-lg`}
+              <button
+                onClick={() => setCart({ ...cart, [p.id]: (cart[p.id] || 0) + 1 })}
+                className={`flex-1 h-14 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 ${cart[p.id] > 0 ? 'bg-green-600 text-white' : 'bg-orange-500 text-white shadow-orange-100'
+                  } active:scale-95 shadow-lg`}
               >
                 {cart[p.id] > 0 ? `SỐ LƯỢNG: ${cart[p.id]}` : 'THÊM VÀO GIỎ'}
               </button>
@@ -177,14 +195,14 @@ export default function App() {
       {totalPrice > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-xl border-t border-gray-100 rounded-t-[3rem] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-3 items-center">
-            <textarea 
+            <textarea
               placeholder="Ghi chú thêm... (ví dụ: Không cay, nhiều hành)"
               className="w-full md:flex-1 p-4 bg-gray-100 rounded-2xl text-sm border-none focus:ring-2 focus:ring-orange-200 resize-none h-14 md:h-16"
               value={orderNote} onChange={(e) => setOrderNote(e.target.value)}
             />
-            <button 
-              onClick={handleOrder} 
-              disabled={isOrdering} 
+            <button
+              onClick={handleOrder}
+              disabled={isOrdering}
               className="w-full md:w-auto md:min-w-[300px] bg-orange-600 text-white py-4 md:py-5 rounded-2xl font-black flex justify-between px-8 shadow-xl shadow-orange-200 active:scale-95 transition-all"
             >
               <span className="tracking-widest">{isOrdering ? 'ĐANG GỬI...' : 'XÁC NHẬN ĐẶT'}</span>
@@ -216,7 +234,7 @@ export default function App() {
                       <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase shadow-sm ${o.status === 'done' ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'}`}>
                         {o.status === 'done' ? '● Hoàn tất' : '● Đang làm'}
                       </span>
-                      <span className="text-[11px] text-gray-400 font-bold bg-white px-3 py-1 rounded-lg border border-gray-100">{new Date(o.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                      <span className="text-[11px] text-gray-400 font-bold bg-white px-3 py-1 rounded-lg border border-gray-100">{new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <div className="space-y-2 border-t border-gray-200 pt-4">
                       {o.items?.map((it: any, i: number) => (
