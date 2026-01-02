@@ -9,3 +9,10 @@
 .animate-bounce-in {
   animation: bounce-in 0.5s ease-out;
 }
+body {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+button:active {
+  transform: scale(0.95);
+}
