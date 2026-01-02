@@ -52,7 +52,7 @@ export default function App() {
       if (selectedCat !== 'Tất cả') return 0;
 
       // Định nghĩa các danh mục ưu tiên
-      const priority = ['mì cay', 'lẩu',];
+      const priority = ['mì cay', 'lẩu & combo'];
 
       const aCat = a.category?.toLowerCase() || '';
       const bCat = b.category?.toLowerCase() || '';
