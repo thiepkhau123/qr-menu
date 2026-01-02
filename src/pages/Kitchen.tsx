@@ -57,7 +57,7 @@ export default function AdminDashboard() {
     if (!printWindow) return;
 
     // CẤU HÌNH NGÂN HÀNG
-    const MY_BANK_ID = "VCB"; 
+    const MY_BANK_ID = "Vietcombank"; 
     const MY_ACCOUNT_NO = "1014363247"; 
     const MY_NAME = "Khấu Trần Ngọc Thiệp"; 
 
