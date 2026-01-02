@@ -16,3 +16,11 @@ body {
 button:active {
   transform: scale(0.95);
 }
+* {
+  -webkit-tap-highlight-color: transparent;
+  outline: none !important;
+}
+
+body {
+  background-color: #f8fafc; /* Màu nền xám nhẹ nhàng cho Admin */
+}
