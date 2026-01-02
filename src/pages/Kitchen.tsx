@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom';
 
-// Định nghĩa kiểu dữ liệu chuẩn
 type OrderStatus = 'pending' | 'done' | 'all';
 type ReportPeriod = 'day' | 'week' | 'month' | 'all';
 
@@ -25,13 +24,15 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState<OrderStatus>('pending')
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('day')
   const [stats, setStats] = useState({ totalRevenue: 0, pendingCount: 0, reportData: [] as any[] })
+  
+  // Biến state để ẩn đơn hàng trên giao diện (Ý số 2)
+  const [hiddenOrderIds, setHiddenOrderIds] = useState<string[]>([]);
 
   const [isEditing, setIsEditing] = useState(false)
   const [productForm, setProductForm] = useState<ProductForm>({
     id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính'
   })
 
-  // 1. Kiểm tra quyền truy cập (Dùng localStorage để đơn giản)
   useEffect(() => {
     const adminStatus = localStorage.getItem('isAdmin');
     if (adminStatus !== 'true') {
@@ -41,7 +42,6 @@ export default function AdminDashboard() {
     }
   }, [navigate]);
 
-  // --- 2. HÀM IN BILL ---
   const handlePrint = (order: any) => {
     const BANK_ID = 'vcb'; 
     const ACCOUNT_NO = '1014363257'; 
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
 
     const itemsHtml = order.items.map((it: any) => `
       <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; font-family: sans-serif;">
-        <span>${it.qty}x ${it.name} ${it.level !== null ? `(Cấp ${it.level})` : ''}</span>
+        <span>${it.qty}x ${it.name} ${it.level !== null && it.level !== undefined ? `(Cấp ${it.level})` : ''}</span>
         <span>${(it.price * it.qty).toLocaleString()}đ</span>
       </div>
     `).join('');
@@ -81,7 +81,6 @@ export default function AdminDashboard() {
     printWindow.document.close();
   };
 
-  // --- 3. LẤY DỮ LIỆU ---
   const fetchReport = useCallback(async () => {
     const now = new Date();
     let query = supabase.from('orders').select('*').eq('status', 'done');
@@ -112,7 +111,6 @@ export default function AdminDashboard() {
     if (data) setMenuItems(data)
   }, [])
 
-  // --- 4. REALTIME ---
   useEffect(() => {
     if (!isAuthorized) return;
     fetchOrders(); fetchMenu(); fetchReport();
@@ -123,31 +121,51 @@ export default function AdminDashboard() {
     return () => { supabase.removeChannel(channel) }
   }, [isAuthorized, fetchOrders, fetchMenu, fetchReport])
 
-  // --- 5. HÀNH ĐỘNG ---
+  // --- SỬA Ý 3: HÀM LƯU MÓN MỚI ---
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { id, ...payload } = productForm;
-    if (isEditing) {
-      await supabase.from('menu_items').update(payload).eq('id', id)
-    } else {
-      await supabase.from('menu_items').insert([payload])
+    try {
+      if (isEditing) {
+        const { id, ...payload } = productForm;
+        await supabase.from('menu_items').update(payload).eq('id', id);
+        alert('Cập nhật thành công!');
+      } else {
+        // Loại bỏ id khi thêm mới để database tự tạo
+        const { id, ...payload } = productForm;
+        const { error } = await supabase.from('menu_items').insert([payload]);
+        if (error) throw error;
+        alert('Thêm món thành công!');
+      }
+      setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' });
+      setIsEditing(false);
+      fetchMenu();
+    } catch (error: any) {
+      alert('Lỗi: ' + error.message);
     }
-    setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' });
-    setIsEditing(false);
-    fetchMenu();
   }
+
+  // --- SỬA Ý 1: HÀM HOÀN THÀNH ---
+  const markAsDone = async (orderId: string) => {
+    try {
+      const { error } = await supabase.from('orders').update({ status: 'done' }).eq('id', orderId);
+      if (error) throw error;
+      fetchOrders();
+      fetchReport();
+    } catch (error: any) {
+      alert('Không thể cập nhật: ' + error.message);
+    }
+  }
+
+  // --- SỬA Ý 2: DỌN DẸP CHỈ ẨN GIAO DIỆN ---
+  const clearDoneOrdersFromView = () => {
+    const doneIds = orders.filter(o => o.status === 'done').map(o => o.id);
+    setHiddenOrderIds(prev => [...prev, ...doneIds]);
+  };
 
   const toggleAvailability = async (id: string, currentStatus: boolean) => {
     await supabase.from('menu_items').update({ is_available: !currentStatus }).eq('id', id);
     fetchMenu();
   };
-
-  const deleteDoneOrders = async () => {
-    if (confirm('Bạn có chắc chắn muốn xóa vĩnh viễn tất cả đơn đã hoàn thành?')) {
-      await supabase.from('orders').delete().eq('status', 'done');
-      fetchOrders();
-    }
-  }
 
   const handleLogout = () => {
     localStorage.removeItem('isAdmin');
@@ -195,13 +213,15 @@ export default function AdminDashboard() {
                   </button>
                 ))}
               </div>
-              <button onClick={deleteDoneOrders} className="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[10px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">
-                🗑️ Dọn dẹp đơn cũ
+              {/* Ý 2: Đổi nút Xóa thành nút Ẩn đơn đã xong */}
+              <button onClick={clearDoneOrdersFromView} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[10px] font-black uppercase hover:bg-blue-500 hover:text-white transition-all">
+                👁️ Ẩn đơn cũ trên máy này
               </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {orders.map(o => (
+              {/* Lọc thêm những đơn không nằm trong danh sách ẩn */}
+              {orders.filter(o => !hiddenOrderIds.includes(o.id)).map(o => (
                 <div key={o.id} className={`bg-white rounded-[2rem] border-2 flex flex-col overflow-hidden transition-all hover:shadow-xl ${o.status === 'pending' ? 'border-orange-500 shadow-md scale-[1.01]' : 'border-gray-100 opacity-60'}`}>
                   <div className={`p-4 flex justify-between items-center ${o.status === 'pending' ? 'bg-orange-500 text-white' : 'bg-gray-500 text-white'}`}>
                     <b className="italic font-black uppercase tracking-tighter text-base">Bàn {o.table_number}</b>
@@ -210,7 +230,7 @@ export default function AdminDashboard() {
                   <div className="p-4 flex-1 space-y-2">
                     {o.items?.map((it: any, i: number) => (
                       <div key={i} className="flex justify-between text-xs font-bold border-b border-gray-50 pb-1.5">
-                        <span className="text-gray-700">{it.qty}x {it.name} {it.level !== null && <span className="text-red-500 ml-1">🌶️{it.level}</span>}</span>
+                        <span className="text-gray-700">{it.qty}x {it.name} {it.level !== null && it.level !== undefined && <span className="text-red-500 ml-1">🌶️{it.level}</span>}</span>
                         <span className="text-gray-400">{(it.price * it.qty).toLocaleString()}đ</span>
                       </div>
                     ))}
@@ -224,8 +244,9 @@ export default function AdminDashboard() {
                     <button onClick={() => handlePrint(o)} className="w-full py-3 bg-white border-2 border-orange-200 rounded-xl text-[11px] font-black uppercase text-orange-600 active:scale-95 shadow-sm">
                       🖨️ In Hóa Đơn + QR
                     </button>
+                    {/* Ý 1: Sửa nút Hoàn thành */}
                     {o.status === 'pending' && (
-                      <button onClick={() => supabase.from('orders').update({ status: 'done' }).eq('id', o.id)}
+                      <button onClick={() => markAsDone(o.id)}
                         className="w-full py-3 rounded-xl text-[11px] font-black uppercase bg-orange-600 text-white shadow-lg shadow-orange-100 active:scale-95 transition-all">
                         Hoàn thành
                       </button>
@@ -275,6 +296,7 @@ export default function AdminDashboard() {
                   <input type="number" placeholder="Giá" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500" value={productForm.price || ''} onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })} required />
                   <input type="text" placeholder="Nhóm" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold" value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })} required />
                   <input type="text" placeholder="Link ảnh" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-[10px] font-bold" value={productForm.image_url} onChange={e => setProductForm({ ...productForm, image_url: e.target.value })} />
+                  {/* Ý 3: Nút Thêm hoạt động tốt hơn với handleSave mới */}
                   <button type="submit" className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg active:scale-95 transition-all">
                     {isEditing ? 'LƯU THAY ĐỔI' : 'THÊM VÀO MENU'}
                   </button>
