@@ -57,9 +57,9 @@ export default function AdminDashboard() {
     if (!printWindow) return;
 
     // CẤU HÌNH NGÂN HÀNG
-    const MY_BANK_ID = "MB"; 
+    const MY_BANK_ID = "VCB"; 
     const MY_ACCOUNT_NO = "1014363247"; 
-    const MY_NAME = "CHU QUAN NHU NGOC"; 
+    const MY_NAME = "Khấu Trần Ngọc Thiệp"; 
 
     const qrUrl = `https://img.vietqr.io/image/${MY_BANK_ID}-${MY_ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=Thanh toan Ban ${order.table_number}&accountName=${MY_NAME}`;
 
