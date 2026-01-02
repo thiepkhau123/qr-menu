@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   const [hiddenOrderIds, setHiddenOrderIds] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false)
   const [productForm, setProductForm] = useState<ProductForm>({
-    id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính'
+    id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Nhập Loại Sản Phẩm'
   })
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [audio] = useState(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
       const finalPayload = {
         name: dataToSave.name.trim(),
         price: Number(dataToSave.price) || 0,
-        category: dataToSave.category || 'Món chính',
+        category: dataToSave.category || 'Nhập Loại Sản Phẩm',
         image_url: dataToSave.image_url || '',
         note: dataToSave.note || '',
         is_available: dataToSave.is_available ?? true
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
         alert('Đã thêm món mới!');
       }
 
-      setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' });
+      setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Nhập Loại Sản Phẩm' });
       setIsEditing(false);
       fetchMenu();
     } catch (error: any) {
