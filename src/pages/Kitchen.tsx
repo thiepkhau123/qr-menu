@@ -23,49 +23,72 @@ export default function AdminDashboard() {
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('day')
   const [stats, setStats] = useState({ totalRevenue: 0, pendingCount: 0, reportData: [] as any[] })
 
-  // State cho QR Code
-  const [showQR, setShowQR] = useState<{ open: boolean; url: string; table: string; amount: number }>({ open: false, url: '', table: '', amount: 0 });
-
   const [isEditing, setIsEditing] = useState(false)
   const [productForm, setProductForm] = useState<ProductForm>({
     id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính'
   })
 
-  // --- 1. HÀM IN BILL ---
+  // --- 1. HÀM IN BILL (ĐÃ TÍCH HỢP MÃ QR VÀO BILL) ---
   const handlePrint = (order: any) => {
+    const BANK_ID = 'vcb'; // Thay mã ngân hàng của bạn
+    const ACCOUNT_NO = '1234567890'; // Thay số tài khoản
+    const ACCOUNT_NAME = 'NGUYEN VAN A'; // Thay tên không dấu
+    const description = encodeURIComponent(`Ban ${order.table_number} thanh toan`);
+    
+    // Link QR Code từ VietQR
+    const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=${description}&accountName=${ACCOUNT_NAME}`;
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+
     const itemsHtml = order.items.map((it: any) => `
       <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; font-family: sans-serif;">
         <span>${it.qty}x ${it.name} ${it.level !== null ? `(Cấp ${it.level})` : ''}</span>
         <span>${(it.price * it.qty).toLocaleString()}đ</span>
       </div>
     `).join('');
+
     printWindow.document.write(`
       <html>
-        <head><title>Bill Bàn ${order.table_number}</title><style>body{font-family:sans-serif;padding:20px;color:#333;}.header{text-align:center;border-bottom:1px dashed #ccc;padding-bottom:10px;margin-bottom:10px;}.total{border-top:1px dashed #ccc;padding-top:10px;margin-top:10px;font-weight:bold;text-align:right;}</style></head>
+        <head>
+          <title>Bill Bàn ${order.table_number}</title>
+          <style>
+            body{font-family:sans-serif;padding:20px;color:#333;width:300px;margin:auto;}
+            .header{text-align:center;border-bottom:1px dashed #ccc;padding-bottom:10px;margin-bottom:10px;}
+            .total{border-top:1px dashed #ccc;padding-top:10px;margin-top:10px;font-weight:bold;text-align:right;font-size:18px;}
+            .qr-container{text-align:center;margin-top:20px;padding-top:10px;border-top:1px solid #eee;}
+            .qr-code{width:180px;height:180px;margin-bottom:5px;}
+            .footer{text-align:center;font-size:10px;color:#888;margin-top:10px;}
+          </style>
+        </head>
         <body>
-          <div class="header"><h2>NHƯ NGỌC QUÁN</h2><p>Bàn: ${order.table_number}</p><p style="font-size:10px">${new Date(order.created_at).toLocaleString()}</p></div>
+          <div class="header">
+            <h2 style="margin:0">NHƯ NGỌC QUÁN</h2>
+            <p style="margin:5px 0">Bàn: ${order.table_number}</p>
+            <p style="font-size:10px">${new Date(order.created_at).toLocaleString()}</p>
+          </div>
           ${itemsHtml}
-          ${order.note ? `<p style="font-size: 12px; font-style: italic; border-top: 1px solid #eee; pt: 5px;">Ghi chú: ${order.note}</p>` : ''}
+          ${order.note ? `<p style="font-size: 12px; font-style: italic; border-top: 1px solid #eee; padding-top: 5px;">Ghi chú: ${order.note}</p>` : ''}
           <div class="total">Tổng: ${order.total.toLocaleString()}đ</div>
-          <script>window.print(); window.close();</script>
+          
+          <div class="qr-container">
+            <p style="font-size:12px; font-weight:bold; margin-bottom:10px;">QUÉT MÃ ĐỂ THANH TOÁN</p>
+            <img src="${qrUrl}" class="qr-code" />
+            <p style="font-size:10px; margin:0;">${ACCOUNT_NAME}</p>
+            <p style="font-size:10px; margin:0;">${BANK_ID.toUpperCase()} - ${ACCOUNT_NO}</p>
+          </div>
+
+          <div class="footer">Cảm ơn quý khách - Hẹn gặp lại!</div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function(){ window.close(); }, 500);
+            };
+          </script>
         </body>
       </html>
     `);
     printWindow.document.close();
-  };
-
-  // --- HÀM TẠO QR THANH TOÁN ---
-  const handleShowQR = (order: any) => {
-    const BANK_ID = 'vcb'; // Thay bằng ngân hàng của bạn (vcb, mbb, tcb...)
-    const ACCOUNT_NO = '1234567890'; // Thay bằng số tài khoản của bạn
-    const ACCOUNT_NAME = 'NGUYEN VAN A'; // Thay bằng tên chủ tài khoản (không dấu)
-    
-    const description = encodeURIComponent(`Ban ${order.table_number} thanh toan`);
-    const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=${description}&accountName=${ACCOUNT_NAME}`;
-    
-    setShowQR({ open: true, url: qrUrl, table: order.table_number, amount: order.total });
   };
 
   // --- 2. LẤY DỮ LIỆU BÁO CÁO ---
@@ -149,21 +172,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-900 pb-20 font-sans">
-      {/* MODAL QR CODE */}
-      {showQR.open && (
-        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl animate-in fade-in zoom-in duration-300">
-            <h3 className="text-xl font-black uppercase italic tracking-tighter mb-1 text-orange-600">Thanh Toán Bàn {showQR.table}</h3>
-            <p className="text-sm font-bold text-gray-500 mb-6">Số tiền: {showQR.amount.toLocaleString()}đ</p>
-            <div className="bg-gray-50 p-4 rounded-3xl mb-6 border-2 border-dashed border-gray-200">
-              <img src={showQR.url} alt="QR Thanh Toan" className="w-full h-auto rounded-xl shadow-sm" />
-            </div>
-            <button onClick={() => setShowQR({ ...showQR, open: false })} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all">Đóng cửa sổ</button>
-          </div>
-        </div>
-      )}
-
-      {/* NAVBAR */}
       <nav className="bg-white border-b sticky top-0 z-50 p-4 shadow-sm">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex gap-4 items-center">
@@ -223,22 +231,15 @@ export default function AdminDashboard() {
                       <span className="font-black text-lg text-orange-600">{o.total.toLocaleString()}đ</span>
                     </div>
                     
-                    {/* HÀNG NÚT BẤM CẢI TIẾN */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <button onClick={() => handlePrint(o)} 
-                        className="py-2.5 bg-white border-2 border-orange-200 rounded-xl text-[10px] font-black uppercase text-orange-600 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all active:scale-95 shadow-sm">
-                        🖨️ In Bill
-                      </button>
-                      <button onClick={() => handleShowQR(o)} 
-                        className="py-2.5 bg-blue-50 border-2 border-blue-200 rounded-xl text-[10px] font-black uppercase text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all active:scale-95 shadow-sm">
-                        📱 Mã QR
-                      </button>
-                    </div>
+                    <button onClick={() => handlePrint(o)} 
+                      className="w-full py-3 bg-white border-2 border-orange-200 rounded-xl text-[11px] font-black uppercase text-orange-600 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all active:scale-95 shadow-sm">
+                      🖨️ In Hóa Đơn + QR
+                    </button>
 
                     {o.status === 'pending' && (
                       <button onClick={() => supabase.from('orders').update({ status: 'done' }).eq('id', o.id)} 
-                        className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase bg-orange-600 text-white shadow-lg shadow-orange-100 active:scale-95 transition-all mt-1">
-                        Hoàn thành & Thu tiền
+                        className="w-full py-3 rounded-xl text-[11px] font-black uppercase bg-orange-600 text-white shadow-lg shadow-orange-100 active:scale-95 transition-all">
+                        Hoàn thành
                       </button>
                     )}
                   </div>
