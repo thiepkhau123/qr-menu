@@ -24,63 +24,25 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState<OrderStatus>('pending')
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('day')
   const [stats, setStats] = useState({ totalRevenue: 0, pendingCount: 0, reportData: [] as any[] })
-
-  // Biến state để ẩn đơn hàng trên giao diện (Ý số 2)
   const [hiddenOrderIds, setHiddenOrderIds] = useState<string[]>([]);
-
   const [isEditing, setIsEditing] = useState(false)
   const [productForm, setProductForm] = useState<ProductForm>({
     id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính'
   })
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [audio] = useState(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
 
+  // --- KIỂM TRA QUYỀN TRUY CẬP ---
   useEffect(() => {
-    const adminStatus = localStorage.getItem('isAdmin');
-    if (adminStatus !== 'true') {
+    const isAdmin = localStorage.getItem('isAdmin');
+    if (!isAdmin) {
       navigate('/admin-login');
     } else {
       setIsAuthorized(true);
     }
   }, [navigate]);
 
-  const handlePrint = (order: any) => {
-    const BANK_ID = 'vcb';
-    const ACCOUNT_NO = '1014363257';
-    const ACCOUNT_NAME = 'KHAU TRAN NGOC THIEP';
-    const description = encodeURIComponent(`Ban ${order.table_number} thanh toan`);
-    const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=${description}&accountName=${ACCOUNT_NAME}`;
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const itemsHtml = order.items.map((it: any) => `
-      <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; font-family: sans-serif;">
-        <span>${it.qty}x ${it.name} ${it.level !== null && it.level !== undefined ? `(Cấp ${it.level})` : ''}</span>
-        <span>${(it.price * it.qty).toLocaleString()}đ</span>
-      </div>
-    `).join('');
-
-    printWindow.document.write(`
-      <html>
-        <head><title>Bill Bàn ${order.table_number}</title><style>
-          body { font-family: sans-serif; padding: 16px; width: 300px; margin: auto; }
-          .center { text-align: center; }
-          .header { border-bottom: 1px dashed #999; padding-bottom: 8px; margin-bottom: 8px; }
-          .total { border-top: 1px dashed #999; margin-top: 10px; padding-top: 8px; font-weight: bold; display: flex; justify-content: space-between; font-size: 16px; }
-          .qr-container { text-align: center; margin-top: 14px; border-top: 1px dashed #999; padding-top: 10px; }
-          .qr-code { width: 160px; }
-        </style></head>
-        <body>
-          <div class="header center"><h2>NHƯ NGỌC QUÁN</h2><div>Bàn: ${order.table_number}</div></div>
-          <div>${itemsHtml}</div>
-          <div class="total"><span>TỔNG</span><span>${order.total.toLocaleString()}đ</span></div>
-          <div class="qr-container"><img src="${qrUrl}" class="qr-code" /><div>${ACCOUNT_NAME}</div></div>
-          <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
-
+  // --- CÁC HÀM FETCH DỮ LIỆU (Đã bọc useCallback để hết báo đỏ) ---
   const fetchReport = useCallback(async () => {
     const now = new Date();
     let query = supabase.from('orders').select('*').eq('status', 'done');
@@ -111,80 +73,109 @@ export default function AdminDashboard() {
     if (data) setMenuItems(data)
   }, [])
 
+  // --- REALTIME SYNC (Chỉ dùng 1 useEffect duy nhất) ---
   useEffect(() => {
     if (!isAuthorized) return;
-    fetchOrders(); fetchMenu(); fetchReport();
-    const channel = supabase.channel('admin_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { fetchOrders(); fetchReport(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, () => fetchMenu())
-      .subscribe();
-    return () => { supabase.removeChannel(channel) }
-  }, [isAuthorized, fetchOrders, fetchMenu, fetchReport])
 
-  // --- SỬA Ý 3: HÀM LƯU MÓN MỚI ---
+    // Load dữ liệu lần đầu
+    fetchOrders();
+    fetchMenu();
+    fetchReport();
+
+    const channel = supabase.channel('admin_sync_all')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        if (payload.eventType === 'INSERT' && isSoundEnabled) {
+          audio.play().catch(() => console.log("Yêu cầu tương tác để phát nhạc"));
+        }
+        fetchOrders();
+        fetchReport();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, () => {
+        fetchMenu();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    }
+  }, [isAuthorized, fetchOrders, fetchMenu, fetchReport, isSoundEnabled, audio]);
+
+  // --- XỬ LÝ NGHIỆP VỤ ---
+  const handlePrint = (order: any) => {
+    const BANK_ID = 'vcb';
+    const ACCOUNT_NO = '1014363257';
+    const ACCOUNT_NAME = 'KHAU TRAN NGOC THIEP';
+    const description = encodeURIComponent(`Ban ${order.table_number} thanh toan`);
+    const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=${description}&accountName=${ACCOUNT_NAME}`;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const itemsHtml = order.items.map((it: any) => `
+      <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; font-family: sans-serif;">
+        <span>${it.qty}x ${it.name} ${it.level !== undefined ? `(Cấp ${it.level})` : ''}</span>
+        <span>${(it.price * it.qty).toLocaleString()}đ</span>
+      </div>
+    `).join('');
+
+    printWindow.document.write(`
+      <html>
+        <head><title>Bill Bàn ${order.table_number}</title><style>
+          body { font-family: sans-serif; padding: 16px; width: 300px; margin: auto; }
+          .center { text-align: center; }
+          .header { border-bottom: 1px dashed #999; padding-bottom: 8px; margin-bottom: 8px; }
+          .total { border-top: 1px dashed #999; margin-top: 10px; padding-top: 8px; font-weight: bold; display: flex; justify-content: space-between; font-size: 16px; }
+          .qr-container { text-align: center; margin-top: 14px; border-top: 1px dashed #999; padding-top: 10px; }
+          .qr-code { width: 160px; }
+        </style></head>
+        <body>
+          <div class="header center"><h2>NHƯ NGỌC QUÁN</h2><div>Bàn: ${order.table_number}</div></div>
+          <div>${itemsHtml}</div>
+          <div class="total"><span>TỔNG</span><span>${order.total.toLocaleString()}đ</span></div>
+          <div class="qr-container"><img src="${qrUrl}" class="qr-code" /><div>${ACCOUNT_NAME}</div></div>
+          <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // 1. Chuẩn bị dữ liệu để gửi đi
-      // Chúng ta bóc tách 'id' ra vì database sẽ tự sinh ID mới khi thêm mới
       const { id, ...dataToSave } = productForm;
-
-      // Đảm bảo giá tiền là số và các trường văn bản không bị null
       const finalPayload = {
         name: dataToSave.name.trim(),
         price: Number(dataToSave.price) || 0,
         category: dataToSave.category || 'Món chính',
         image_url: dataToSave.image_url || '',
-        note: dataToSave.note || '', // Đảm bảo note luôn là chuỗi, tránh lỗi NULL
+        note: dataToSave.note || '',
         is_available: dataToSave.is_available ?? true
       };
 
       if (isEditing) {
-        // TRƯỜNG HỢP CẬP NHẬT
-        const { error } = await supabase
-          .from('menu_items')
-          .update(finalPayload)
-          .eq('id', id);
+        const { error } = await supabase.from('menu_items').update(finalPayload).eq('id', id);
         if (error) throw error;
-        alert('Đã cập nhật món ăn!');
+        alert('Đã cập nhật!');
       } else {
-        // TRƯỜNG HỢP THÊM MỚI
-        const { error } = await supabase
-          .from('menu_items')
-          .insert([finalPayload]);
+        const { error } = await supabase.from('menu_items').insert([finalPayload]);
         if (error) throw error;
-        alert('Đã thêm món mới vào thực đơn!');
+        alert('Đã thêm món mới!');
       }
 
-      // 2. Reset Form và cập nhật giao diện
-      setProductForm({
-        id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính'
-      });
+      setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' });
       setIsEditing(false);
       fetchMenu();
     } catch (error: any) {
-      console.error('Lỗi lưu món:', error);
-      alert('Không thể lưu: ' + (error.message || 'Lỗi hệ thống'));
+      alert('Lỗi: ' + error.message);
     }
   };
 
-  // --- SỬA Ý 1: HÀM HOÀN THÀNH ---
   const markAsDone = async (orderId: string) => {
-    try {
-      const { error } = await supabase.from('orders').update({ status: 'done' }).eq('id', orderId);
-      if (error) throw error;
-      fetchOrders();
-      fetchReport();
-    } catch (error: any) {
-      alert('Không thể cập nhật: ' + error.message);
-    }
+    await supabase.from('orders').update({ status: 'done' }).eq('id', orderId);
+    fetchOrders();
+    fetchReport();
   }
-
-  // --- SỬA Ý 2: DỌN DẸP CHỈ ẨN GIAO DIỆN ---
-  const clearDoneOrdersFromView = () => {
-    const doneIds = orders.filter(o => o.status === 'done').map(o => o.id);
-    setHiddenOrderIds(prev => [...prev, ...doneIds]);
-  };
 
   const toggleAvailability = async (id: string, currentStatus: boolean) => {
     await supabase.from('menu_items').update({ is_available: !currentStatus }).eq('id', id);
@@ -213,7 +204,14 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
+          
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSoundEnabled(!isSoundEnabled)}
+              className={`p-2 rounded-xl transition-all ${isSoundEnabled ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400'}`}
+            >
+              {isSoundEnabled ? "🔔" : "🔕"}
+            </button>
             <div className="text-right cursor-pointer" onClick={() => setActiveTab('report')}>
               <p className="text-[8px] font-bold text-gray-400 uppercase">Doanh thu</p>
               <p className="text-lg font-black text-green-600 leading-none">{stats.totalRevenue.toLocaleString()}đ</p>
@@ -237,16 +235,15 @@ export default function AdminDashboard() {
                   </button>
                 ))}
               </div>
-              {/* Ý 2: Đổi nút Xóa thành nút Ẩn đơn đã xong */}
-              <button onClick={clearDoneOrdersFromView} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[10px] font-black uppercase hover:bg-blue-500 hover:text-white transition-all">
-                👁️ Ẩn đơn cũ trên máy này
+              <button onClick={() => setHiddenOrderIds(prev => [...prev, ...orders.filter(o => o.status === 'done').map(o => o.id)])} 
+                className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[10px] font-black uppercase">
+                👁️ Ẩn đơn cũ
               </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Lọc thêm những đơn không nằm trong danh sách ẩn */}
               {orders.filter(o => !hiddenOrderIds.includes(o.id)).map(o => (
-                <div key={o.id} className={`bg-white rounded-[2rem] border-2 flex flex-col overflow-hidden transition-all hover:shadow-xl ${o.status === 'pending' ? 'border-orange-500 shadow-md scale-[1.01]' : 'border-gray-100 opacity-60'}`}>
+                <div key={o.id} className={`bg-white rounded-[2rem] border-2 flex flex-col overflow-hidden transition-all ${o.status === 'pending' ? 'border-orange-500 shadow-md scale-[1.01]' : 'border-gray-100 opacity-60'}`}>
                   <div className={`p-4 flex justify-between items-center ${o.status === 'pending' ? 'bg-orange-500 text-white' : 'bg-gray-500 text-white'}`}>
                     <b className="italic font-black uppercase tracking-tighter text-base">Bàn {o.table_number}</b>
                     <span className="text-[10px] font-bold bg-black/10 px-2 py-1 rounded-lg">{new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -254,7 +251,7 @@ export default function AdminDashboard() {
                   <div className="p-4 flex-1 space-y-2">
                     {o.items?.map((it: any, i: number) => (
                       <div key={i} className="flex justify-between text-xs font-bold border-b border-gray-50 pb-1.5">
-                        <span className="text-gray-700">{it.qty}x {it.name} {it.level !== null && it.level !== undefined && <span className="text-red-500 ml-1">🌶️{it.level}</span>}</span>
+                        <span className="text-gray-700">{it.qty}x {it.name} {it.level && <span className="text-red-500">🌶️{it.level}</span>}</span>
                         <span className="text-gray-400">{(it.price * it.qty).toLocaleString()}đ</span>
                       </div>
                     ))}
@@ -262,16 +259,14 @@ export default function AdminDashboard() {
                   </div>
                   <div className="p-4 bg-gray-50 border-t flex flex-col gap-2">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-gray-400 uppercase text-[9px] font-bold">Tổng thanh toán</span>
+                      <span className="text-gray-400 uppercase text-[9px] font-bold">Tổng tiền</span>
                       <span className="font-black text-lg text-orange-600">{o.total.toLocaleString()}đ</span>
                     </div>
-                    <button onClick={() => handlePrint(o)} className="w-full py-3 bg-white border-2 border-orange-200 rounded-xl text-[11px] font-black uppercase text-orange-600 active:scale-95 shadow-sm">
-                      🖨️ In Hóa Đơn + QR
+                    <button onClick={() => handlePrint(o)} className="w-full py-3 bg-white border-2 border-orange-200 rounded-xl text-[11px] font-black uppercase text-orange-600 shadow-sm">
+                      🖨️ In Hóa Đơn
                     </button>
-                    {/* Ý 1: Sửa nút Hoàn thành */}
                     {o.status === 'pending' && (
-                      <button onClick={() => markAsDone(o.id)}
-                        className="w-full py-3 rounded-xl text-[11px] font-black uppercase bg-orange-600 text-white shadow-lg shadow-orange-100 active:scale-95 transition-all">
+                      <button onClick={() => markAsDone(o.id)} className="w-full py-3 rounded-xl text-[11px] font-black uppercase bg-orange-600 text-white shadow-lg">
                         Hoàn thành
                       </button>
                     )}
@@ -314,64 +309,18 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
               <form onSubmit={handleSave} className="bg-white p-6 rounded-[2.5rem] border-2 border-gray-100 shadow-sm sticky top-24">
-                <h2 className="text-lg font-black uppercase mb-6 italic tracking-tighter">
-                  {isEditing ? 'Cập nhật món' : 'Thêm món mới'}
-                </h2>
+                <h2 className="text-lg font-black uppercase mb-6 italic tracking-tighter">{isEditing ? 'Cập nhật món' : 'Thêm món mới'}</h2>
                 <div className="space-y-4">
-                  <input
-                    type="text"
-                    placeholder="Tên món (ví dụ: Mì cay hải sản)"
-                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500"
-                    value={productForm.name}
-                    onChange={e => setProductForm({ ...productForm, name: e.target.value })}
-                    required
-                  />
-                  <input
-                    type="number"
-                    placeholder="Giá tiền"
-                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500"
-                    value={productForm.price || ''}
-                    onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })}
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Nhóm (mì cay, đồ uống...)"
-                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold"
-                    value={productForm.category}
-                    onChange={e => setProductForm({ ...productForm, category: e.target.value })}
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Link ảnh món ăn"
-                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-[10px] font-bold"
-                    value={productForm.image_url}
-                    onChange={e => setProductForm({ ...productForm, image_url: e.target.value })}
-                  />
-                  {/* Ô nhập Ghi chú mới thêm */}
-                  <textarea
-                    placeholder="Ghi chú món ăn (ví dụ: Cay vừa, ngon...)"
-                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500 min-h-[80px]"
-                    value={productForm.note}
-                    onChange={e => setProductForm({ ...productForm, note: e.target.value })}
-                  />
-
-                  <button type="submit" className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg active:scale-95 transition-all">
+                  <input type="text" placeholder="Tên món" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500" value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} required />
+                  <input type="number" placeholder="Giá tiền" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500" value={productForm.price || ''} onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })} required />
+                  <input type="text" placeholder="Nhóm" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold" value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })} required />
+                  <input type="text" placeholder="Link ảnh" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-[10px] font-bold" value={productForm.image_url} onChange={e => setProductForm({ ...productForm, image_url: e.target.value })} />
+                  <textarea placeholder="Ghi chú" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold min-h-[80px]" value={productForm.note} onChange={e => setProductForm({ ...productForm, note: e.target.value })} />
+                  <button type="submit" className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg">
                     {isEditing ? 'LƯU THAY ĐỔI' : 'THÊM VÀO MENU'}
                   </button>
-
                   {isEditing && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditing(false);
-                        setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' });
-                      }}
-                      className="w-full text-[10px] font-black text-gray-400 uppercase pt-2 underline"
-                    >
-                      Hủy bỏ
-                    </button>
+                    <button type="button" onClick={() => { setIsEditing(false); setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' }); }} className="w-full text-[10px] font-black text-gray-400 uppercase underline">Hủy</button>
                   )}
                 </div>
               </form>
@@ -379,7 +328,7 @@ export default function AdminDashboard() {
             <div className="lg:col-span-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {menuItems.map(p => (
-                  <div key={p.id} className={`bg-white p-3 rounded-[2rem] border-2 flex gap-4 items-center transition-all ${p.is_available ? 'border-gray-50 shadow-sm' : 'grayscale opacity-60 bg-gray-50'}`}>
+                  <div key={p.id} className={`bg-white p-3 rounded-[2rem] border-2 flex gap-4 items-center ${p.is_available ? 'border-gray-50 shadow-sm' : 'grayscale opacity-60 bg-gray-50'}`}>
                     <img src={p.image_url || 'https://via.placeholder.com/100'} alt="" className="w-20 h-20 rounded-2xl object-cover" />
                     <div className="flex-1 min-w-0">
                       <h4 className="font-black text-sm uppercase truncate">{p.name}</h4>
@@ -387,7 +336,7 @@ export default function AdminDashboard() {
                       <div className="flex gap-3 mt-2">
                         <button onClick={() => { setIsEditing(true); setProductForm(p); }} className="text-[10px] font-black text-blue-500 uppercase underline">Sửa</button>
                         <button onClick={() => toggleAvailability(p.id, p.is_available)} className={`text-[10px] font-black uppercase underline ${p.is_available ? 'text-amber-500' : 'text-green-600'}`}>{p.is_available ? 'Hết' : 'Mở'}</button>
-                        <button onClick={() => { if (confirm('Xóa?')) supabase.from('menu_items').delete().eq('id', p.id) }} className="text-[10px] font-black text-red-500 uppercase underline ml-auto">Xóa</button>
+                        <button onClick={() => { if (confirm('Xóa?')) supabase.from('menu_items').delete().eq('id', p.id).then(() => fetchMenu()) }} className="text-[10px] font-black text-red-500 uppercase underline ml-auto">Xóa</button>
                       </div>
                     </div>
                   </div>
