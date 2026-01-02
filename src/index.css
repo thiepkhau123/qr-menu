@@ -24,3 +24,19 @@ button:active {
 body {
   background-color: #f8fafc; /* Màu nền xám nhẹ nhàng cho Admin */
 }
+@layer base {
+  /* Hiệu ứng cho tất cả các nút */
+  button {
+    @apply transition-all duration-200 active:scale-95;
+  }
+
+  /* Hiệu ứng làm sáng các hình ảnh khi hover */
+  img:hover {
+    @apply opacity-90 transition-opacity;
+  }
+
+  /* Hiệu ứng cho các thẻ Card (đã có border) */
+  .hover-card {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+}
