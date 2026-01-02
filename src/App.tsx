@@ -101,9 +101,9 @@ export default function App() {
                 <p className="text-orange-600 font-black text-xl mt-1">{p.price.toLocaleString()}đ</p>
               </div>
             </div>
-            
-            {/* CHỈ HIỆN CẤP ĐỘ NẾU TÊN MÓN CÓ CHỮ "MÌ" */}
-            {p.name.toLowerCase().includes('mì') && (
+
+            {/* CHỈ HIỆN CẤP ĐỘ NẾU TÊN MÓN CÓ CHỮ "MÌ CAY" */}
+            {p.name.toLowerCase().includes('mì cay') && (
               <div className="bg-orange-50/50 p-3 rounded-2xl border border-orange-100">
                 <p className="text-[10px] text-orange-400 font-black mb-2 uppercase tracking-widest">Chọn mức độ cay:</p>
                 <div className="flex justify-between gap-1">
