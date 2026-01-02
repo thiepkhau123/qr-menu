@@ -51,7 +51,7 @@ export default function AdminConsole() {
           // Phát tiếng chuông báo hiệu
           const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3')
           audio.play().catch(() => console.log("Yêu cầu tương tác để phát nhạc"))
-          
+
           setOrders(prev => [payload.new as Order, ...prev])
         }
       )
@@ -72,36 +72,38 @@ export default function AdminConsole() {
   }
 
   const toggleAvailability = async (id: string, currentStatus: boolean) => {
-  // 1. Gửi lệnh cập nhật lên Supabase
-  const { error } = await supabase
-    .from('menu_items')
-    .update({ is_available: !currentStatus })
-    .eq('id', id);
+    console.log("Đang cập nhật món:", id, "Trạng thái mới:", !currentStatus);
 
-  if (error) {
-    // Nếu lỗi (ví dụ do thiếu cột hoặc quyền), nó sẽ báo ở đây
-    alert("Lỗi lưu trạng thái: " + error.message);
-    return;
-  }
+    const { error } = await supabase
+      .from('menu_items')
+      .update({ is_available: !currentStatus })
+      .eq('id', id);
 
-  // 2. Chỉ khi lưu thành công mới cập nhật giao diện (State)
-  setMenuItems(prev => prev.map(item => 
-    item.id === id ? { ...item, is_available: !currentStatus } : item
-  ));
-};
+    if (error) {
+      // Nếu có lỗi, trình duyệt sẽ hiện thông báo đỏ
+      alert("Lỗi Supabase: " + error.message);
+      console.error(error);
+    } else {
+      // Nếu thành công, cập nhật giao diện
+      setMenuItems(prev => prev.map(item =>
+        item.id === id ? { ...item, is_available: !currentStatus } : item
+      ));
+      console.log("Cập nhật thành công!");
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-4 pb-20">
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-orange-600">Quản Lý Quán 🏪</h1>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => setTab('orders')}
             className={`px-4 py-2 rounded-full ${tab === 'orders' ? 'bg-orange-600 text-white' : 'bg-gray-200'}`}
           >
             Đơn hàng
           </button>
-          <button 
+          <button
             onClick={() => setTab('menu')}
             className={`px-4 py-2 rounded-full ${tab === 'menu' ? 'bg-orange-600 text-white' : 'bg-gray-200'}`}
           >
@@ -123,7 +125,7 @@ export default function AdminConsole() {
                 </div>
                 <span className="font-bold text-orange-600">{o.total.toLocaleString()}đ</span>
               </div>
-              
+
               <div className="bg-orange-50 p-2 rounded mb-3">
                 {o.items?.map((item: any, idx: number) => (
                   <div key={idx} className="text-sm">
@@ -133,7 +135,7 @@ export default function AdminConsole() {
               </div>
 
               {o.status !== 'done' ? (
-                <button 
+                <button
                   onClick={() => markAsDone(o.id)}
                   className="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition"
                 >
@@ -156,11 +158,10 @@ export default function AdminConsole() {
                 <p className="font-bold text-gray-700">{item.name}</p>
                 <p className="text-sm text-gray-400">{item.price.toLocaleString()}đ</p>
               </div>
-              <button 
+              <button
                 onClick={() => toggleAvailability(item.id, item.is_available)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
-                  item.is_available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition ${item.is_available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}
               >
                 {item.is_available ? 'Đang bán' : 'Hết hàng'}
               </button>
