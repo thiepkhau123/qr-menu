@@ -313,14 +313,14 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                   <input type="text" placeholder="Tên món" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500" value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} required />
                   <input type="number" placeholder="Giá tiền" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500" value={productForm.price || ''} onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })} required />
-                  <input type="text" placeholder="Loại Sản Phẩm" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold" value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })} required />
+                  <input type="text" placeholder="Nhóm" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold" value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })} required />
                   <input type="text" placeholder="Link ảnh" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-[10px] font-bold" value={productForm.image_url} onChange={e => setProductForm({ ...productForm, image_url: e.target.value })} />
                   <textarea placeholder="Ghi chú" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold min-h-[80px]" value={productForm.note} onChange={e => setProductForm({ ...productForm, note: e.target.value })} />
                   <button type="submit" className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg">
                     {isEditing ? 'LƯU THAY ĐỔI' : 'THÊM VÀO MENU'}
                   </button>
                   {isEditing && (
-                    <button type="button" onClick={() => { setIsEditing(false); setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: '' }); }} className="w-full text-[10px] font-black text-gray-400 uppercase underline">Hủy</button>
+                    <button type="button" onClick={() => { setIsEditing(false); setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: '(Nhập Loại Sản Phẩm)' }); }} className="w-full text-[10px] font-black text-gray-400 uppercase underline">Hủy</button>
                   )}
                 </div>
               </form>
