@@ -134,7 +134,7 @@ export default function App() {
             
             <button 
               onClick={() => setCart({...cart, [p.id]: (cart[p.id]||0)+1})} 
-              className={`w-full py-3 rounded-xl font-black text-sm transition-all ${cart[p.id] > 0 ? 'bg-green-600 text-white' : 'bg-orange-600 text-white'}`}
+              className={`w-full py-3 rounded-xl font-black text-sm transition-all ${cart[p.id] > 0 ? 'bg-green-600 text-white' : 'bg-orange-500 text-white'}`}
             >
               {cart[p.id] > 0 ? `ĐÃ THÊM (${cart[p.id]})` : '+ THÊM VÀO GIỎ HÀNG'}
             </button>
