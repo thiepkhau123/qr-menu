@@ -262,7 +262,7 @@ export default function AdminDashboard() {
                       <span className="text-gray-400 uppercase text-[9px] font-bold">Tổng tiền</span>
                       <span className="font-black text-lg text-orange-600">{o.total.toLocaleString()}đ</span>
                     </div>
-                    <button onClick={() => handlePrint(o)} className="w-full py-3 bg-white border-2 border-orange-200 rounded-xl text-[11px] font-black uppercase text-orange-600 shadow-sm">
+                    <button onClick={() => handlePrint(o)} className="w-full py-3 bg-white border-2 border-orange-200 rounded-xl text-[11px] font-black uppercase text-orange-600 shadow-sm hover:bg-orange-50 hover:border-orange-400 transition-colors">
                       🖨️ In Hóa Đơn
                     </button>
                     {o.status === 'pending' && (
