@@ -23,12 +23,15 @@ export default function AdminDashboard() {
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('day')
   const [stats, setStats] = useState({ totalRevenue: 0, pendingCount: 0, reportData: [] as any[] })
 
+  // State cho QR Code
+  const [showQR, setShowQR] = useState<{ open: boolean; url: string; table: string; amount: number }>({ open: false, url: '', table: '', amount: 0 });
+
   const [isEditing, setIsEditing] = useState(false)
   const [productForm, setProductForm] = useState<ProductForm>({
     id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính'
   })
 
-  // --- 1. HÀM IN BILL (CẢI TIẾN GIAO DIỆN IN) ---
+  // --- 1. HÀM IN BILL ---
   const handlePrint = (order: any) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -53,7 +56,19 @@ export default function AdminDashboard() {
     printWindow.document.close();
   };
 
-  // --- 2. LẤY DỮ LIỆU BÁO CÁO (THÊM LỰA CHỌN TẤT CẢ) ---
+  // --- HÀM TẠO QR THANH TOÁN ---
+  const handleShowQR = (order: any) => {
+    const BANK_ID = 'vcb'; // Thay bằng ngân hàng của bạn (vcb, mbb, tcb...)
+    const ACCOUNT_NO = '1234567890'; // Thay bằng số tài khoản của bạn
+    const ACCOUNT_NAME = 'NGUYEN VAN A'; // Thay bằng tên chủ tài khoản (không dấu)
+    
+    const description = encodeURIComponent(`Ban ${order.table_number} thanh toan`);
+    const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=${description}&accountName=${ACCOUNT_NAME}`;
+    
+    setShowQR({ open: true, url: qrUrl, table: order.table_number, amount: order.total });
+  };
+
+  // --- 2. LẤY DỮ LIỆU BÁO CÁO ---
   const fetchReport = useCallback(async () => {
     const now = new Date();
     let query = supabase.from('orders').select('*').eq('status', 'done');
@@ -97,7 +112,7 @@ export default function AdminDashboard() {
     if (data) setMenuItems(data)
   }, [])
 
-  // --- 5. FIX LỖI NÚT HẾT/MỞ (CẬP NHẬT TRẠNG THÁI) ---
+  // --- 5. FIX LỖI NÚT HẾT/MỞ ---
   const toggleAvailability = async (id: string, currentStatus: boolean) => {
     await supabase.from('menu_items').update({ is_available: !currentStatus }).eq('id', id);
     fetchMenu();
@@ -134,6 +149,20 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-900 pb-20 font-sans">
+      {/* MODAL QR CODE */}
+      {showQR.open && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl animate-in fade-in zoom-in duration-300">
+            <h3 className="text-xl font-black uppercase italic tracking-tighter mb-1 text-orange-600">Thanh Toán Bàn {showQR.table}</h3>
+            <p className="text-sm font-bold text-gray-500 mb-6">Số tiền: {showQR.amount.toLocaleString()}đ</p>
+            <div className="bg-gray-50 p-4 rounded-3xl mb-6 border-2 border-dashed border-gray-200">
+              <img src={showQR.url} alt="QR Thanh Toan" className="w-full h-auto rounded-xl shadow-sm" />
+            </div>
+            <button onClick={() => setShowQR({ ...showQR, open: false })} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all">Đóng cửa sổ</button>
+          </div>
+        </div>
+      )}
+
       {/* NAVBAR */}
       <nav className="bg-white border-b sticky top-0 z-50 p-4 shadow-sm">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
@@ -172,7 +201,6 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            {/* GRID CARD ĐƠN HÀNG (SỬA LẠI UI) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {orders.map(o => (
                 <div key={o.id} className={`bg-white rounded-[2rem] border-2 flex flex-col overflow-hidden transition-all hover:shadow-xl ${o.status === 'pending' ? 'border-orange-500 shadow-md scale-[1.01]' : 'border-gray-100 opacity-60'}`}>
@@ -194,15 +222,23 @@ export default function AdminDashboard() {
                       <span className="text-gray-400 uppercase text-[9px] font-bold">Tổng thanh toán</span>
                       <span className="font-black text-lg text-orange-600">{o.total.toLocaleString()}đ</span>
                     </div>
-                    {/* NÚT IN BILL Ở GIỮA VÀ HOVER */}
-                    <button onClick={() => handlePrint(o)} 
-                      className="w-full py-2.5 bg-white border-2 border-orange-200 rounded-xl text-[10px] font-black uppercase text-orange-600 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all active:scale-95 shadow-sm">
-                      🖨️ In Bill Hóa Đơn
-                    </button>
+                    
+                    {/* HÀNG NÚT BẤM CẢI TIẾN */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <button onClick={() => handlePrint(o)} 
+                        className="py-2.5 bg-white border-2 border-orange-200 rounded-xl text-[10px] font-black uppercase text-orange-600 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all active:scale-95 shadow-sm">
+                        🖨️ In Bill
+                      </button>
+                      <button onClick={() => handleShowQR(o)} 
+                        className="py-2.5 bg-blue-50 border-2 border-blue-200 rounded-xl text-[10px] font-black uppercase text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all active:scale-95 shadow-sm">
+                        📱 Mã QR
+                      </button>
+                    </div>
+
                     {o.status === 'pending' && (
                       <button onClick={() => supabase.from('orders').update({ status: 'done' }).eq('id', o.id)} 
-                        className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase bg-orange-600 text-white shadow-lg shadow-orange-100 active:scale-95 transition-all">
-                        Hoàn thành
+                        className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase bg-orange-600 text-white shadow-lg shadow-orange-100 active:scale-95 transition-all mt-1">
+                        Hoàn thành & Thu tiền
                       </button>
                     )}
                   </div>
@@ -282,7 +318,6 @@ export default function AdminDashboard() {
                       <p className="text-orange-600 font-black text-xs">{p.price.toLocaleString()}đ</p>
                       <div className="flex gap-3 mt-2">
                         <button onClick={() => { setIsEditing(true); setProductForm(p); }} className="text-[10px] font-black text-blue-500 uppercase underline">Sửa</button>
-                        {/* NÚT HẾT/MỞ ĐÃ ĐƯỢC FIX */}
                         <button onClick={() => toggleAvailability(p.id, p.is_available)} 
                           className={`text-[10px] font-black uppercase underline ${p.is_available ? 'text-amber-500' : 'text-green-600'}`}>
                           {p.is_available ? 'Báo Hết' : 'Mở Lại'}
