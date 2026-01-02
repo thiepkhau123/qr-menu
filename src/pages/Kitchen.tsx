@@ -72,9 +72,23 @@ export default function AdminConsole() {
   }
 
   const toggleAvailability = async (id: string, currentStatus: boolean) => {
-    await supabase.from('menu_items').update({ is_available: !currentStatus }).eq('id', id)
-    setMenuItems(menuItems.map(item => item.id === id ? { ...item, is_available: !currentStatus } : item))
+  // 1. Gửi lệnh cập nhật lên Supabase
+  const { error } = await supabase
+    .from('menu_items')
+    .update({ is_available: !currentStatus })
+    .eq('id', id);
+
+  if (error) {
+    // Nếu lỗi (ví dụ do thiếu cột hoặc quyền), nó sẽ báo ở đây
+    alert("Lỗi lưu trạng thái: " + error.message);
+    return;
   }
+
+  // 2. Chỉ khi lưu thành công mới cập nhật giao diện (State)
+  setMenuItems(prev => prev.map(item => 
+    item.id === id ? { ...item, is_available: !currentStatus } : item
+  ));
+};
 
   return (
     <div className="max-w-4xl mx-auto p-4 pb-20">
