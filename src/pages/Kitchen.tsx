@@ -71,26 +71,28 @@ export default function AdminConsole() {
     setOrders(orders.map(o => o.id === id ? { ...o, status: 'done' } : o))
   }
 
-  const toggleAvailability = async (id: string, currentStatus: boolean) => {
-    console.log("Đang cập nhật món:", id, "Trạng thái mới:", !currentStatus);
+const toggleAvailability = async (id: string, currentStatus: boolean) => {
+  const newStatus = !currentStatus;
 
-    const { error } = await supabase
-      .from('menu_items')
-      .update({ is_available: !currentStatus })
-      .eq('id', id);
+  // 1. Gửi lệnh cập nhật
+  const { error } = await supabase
+    .from('menu_items')
+    .update({ is_available: newStatus })
+    .eq('id', id);
 
-    if (error) {
-      // Nếu có lỗi, trình duyệt sẽ hiện thông báo đỏ
-      alert("Lỗi Supabase: " + error.message);
-      console.error(error);
-    } else {
-      // Nếu thành công, cập nhật giao diện
-      setMenuItems(prev => prev.map(item =>
-        item.id === id ? { ...item, is_available: !currentStatus } : item
-      ));
-      console.log("Cập nhật thành công!");
-    }
-  };
+  if (error) {
+    alert("Lỗi từ Supabase: " + error.message);
+    return;
+  }
+
+  // 2. THÀNH CÔNG: Cập nhật lại giao diện ngay lập tức
+  setMenuItems(prev => prev.map(item => 
+    item.id === id ? { ...item, is_available: newStatus } : item
+  ));
+  
+  // 3. Thông báo nhỏ để bạn yên tâm
+  console.log(`Đã chuyển món ${id} sang ${newStatus ? 'Đang bán' : 'Hết hàng'}`);
+};
 
   return (
     <div className="max-w-4xl mx-auto p-4 pb-20">
