@@ -95,16 +95,16 @@ export default function AdminDashboard() {
     e.preventDefault();
     // Dùng destructuring để loại bỏ id khi thêm mới, tránh lỗi operand delete
     const { id, ...payload } = productForm;
-    
-    if (isEditing) { 
-      await supabase.from('menu_items').update(payload).eq('id', id) 
-    } else { 
-      await supabase.from('menu_items').insert([payload]) 
+
+    if (isEditing) {
+      await supabase.from('menu_items').update(payload).eq('id', id)
+    } else {
+      await supabase.from('menu_items').insert([payload])
     }
-    
+
     // Reset Form
     setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' });
-    setIsEditing(false); 
+    setIsEditing(false);
     fetchMenu();
   }
 
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
             {/* FILTER TABS - Đã ép kiểu để hết lỗi vàng */}
             <div className="flex justify-center gap-2">
               {(['pending', 'done', 'all'] as OrderStatus[]).map((s) => (
-                <button key={s} onClick={() => setFilterStatus(s)} 
+                <button key={s} onClick={() => setFilterStatus(s)}
                   className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${filterStatus === s ? 'bg-orange-500 text-white shadow-lg' : 'bg-white text-gray-400 border'}`}>
                   {s === 'pending' ? `Chờ (${stats.pendingCount})` : s === 'done' ? 'Đã xong' : 'Tất cả'}
                 </button>
@@ -146,8 +146,9 @@ export default function AdminDashboard() {
                 <div key={o.id} className={`bg-white rounded-[2rem] border-2 flex flex-col overflow-hidden transition-all ${o.status === 'pending' ? 'border-orange-500 shadow-xl' : 'border-gray-200 opacity-60'}`}>
                   <div className={`p-4 flex justify-between items-center ${o.status === 'pending' ? 'bg-orange-500 text-white' : 'bg-gray-500 text-white'}`}>
                     <b className="italic font-black uppercase tracking-tighter">Bàn {o.table_number}</b>
-                    <span className="text-[10px] opacity-80">{new Date(o.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    <span className="text-[10px] opacity-80">{new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
+
                   <div className="p-4 flex-1 space-y-2">
                     {o.items?.map((it: any, i: number) => (
                       <div key={i} className="flex justify-between text-[11px] font-bold border-b border-gray-50 pb-1">
@@ -157,17 +158,35 @@ export default function AdminDashboard() {
                     ))}
                     {o.note && <p className="text-[10px] bg-amber-50 p-2 rounded-lg text-amber-700 italic border border-amber-100">Note: {o.note}</p>}
                   </div>
+
                   <div className="p-4 bg-gray-50 border-t flex flex-col gap-3">
                     <div className="flex justify-between items-center font-black text-sm">
                       <span className="text-gray-400 uppercase text-[9px]">Tổng đơn</span>
                       <span>{o.total.toLocaleString()}đ</span>
                     </div>
+
                     <div className="grid grid-cols-2 gap-2">
-                      <button onClick={() => handlePrint(o)} className="py-2.5 bg-white border-2 border-gray-200 rounded-xl text-[10px] font-black uppercase text-gray-500 active:scale-95 transition-all">In Bill</button>
-                      <button onClick={() => supabase.from('orders').update({status: o.status === 'pending' ? 'done' : 'pending'}).eq('id', o.id)} 
-                        className={`py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${o.status === 'pending' ? 'bg-orange-600 text-white shadow-lg shadow-orange-100' : 'bg-gray-800 text-white'}`}>
-                        {o.status === 'pending' ? 'Xong' : 'Mở lại'}
+                      {/* Nút In Bill giữ nguyên */}
+                      <button onClick={() => handlePrint(o)} className="py-2.5 bg-white border-2 border-gray-200 rounded-xl text-[10px] font-black uppercase text-gray-500 active:scale-95 transition-all">
+                        In Bill
                       </button>
+
+                      {/* Logic thay đổi nút tại đây */}
+                      {o.status === 'pending' ? (
+                        <button
+                          onClick={() => supabase.from('orders').update({ status: 'done' }).eq('id', o.id)}
+                          className="py-2.5 rounded-xl text-[10px] font-black uppercase bg-orange-600 text-white shadow-lg shadow-orange-100 active:scale-95 transition-all"
+                        >
+                          Xong
+                        </button>
+                      ) : (
+                        <button
+                          onClick={async () => { if (confirm('Xóa vĩnh viễn đơn hàng này?')) await supabase.from('orders').delete().eq('id', o.id) }}
+                          className="py-2.5 rounded-xl text-[10px] font-black uppercase bg-red-500 text-white active:scale-95 transition-all"
+                        >
+                          Xóa đơn
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -181,15 +200,15 @@ export default function AdminDashboard() {
               <form onSubmit={handleSave} className="bg-white p-6 rounded-[2.5rem] border-2 border-gray-100 shadow-sm sticky top-24">
                 <h2 className="text-lg font-black uppercase mb-6 italic tracking-tighter">{isEditing ? 'Cập nhật món 📝' : 'Thêm món mới 🍜'}</h2>
                 <div className="space-y-4">
-                  <input type="text" placeholder="Tên món" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500 transition-all" value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} required />
-                  <input type="number" placeholder="Giá (VNĐ)" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500 transition-all" value={productForm.price || ''} onChange={e => setProductForm({...productForm, price: parseInt(e.target.value)})} required />
-                  <input type="text" placeholder="Nhóm (Ví dụ: Mì cay, Đồ uống)" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500 transition-all" value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} required />
-                  <input type="text" placeholder="Link hình ảnh" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-[10px] font-bold focus:ring-2 focus:ring-orange-500 transition-all" value={productForm.image_url} onChange={e => setProductForm({...productForm, image_url: e.target.value})} />
-                  <textarea placeholder="Ghi chú món..." className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold h-20" value={productForm.note} onChange={e => setProductForm({...productForm, note: e.target.value})} />
-                  
+                  <input type="text" placeholder="Tên món" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500 transition-all" value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} required />
+                  <input type="number" placeholder="Giá (VNĐ)" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500 transition-all" value={productForm.price || ''} onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })} required />
+                  <input type="text" placeholder="Nhóm (Ví dụ: Mì cay, Đồ uống)" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500 transition-all" value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })} required />
+                  <input type="text" placeholder="Link hình ảnh" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-[10px] font-bold focus:ring-2 focus:ring-orange-500 transition-all" value={productForm.image_url} onChange={e => setProductForm({ ...productForm, image_url: e.target.value })} />
+                  <textarea placeholder="Ghi chú món..." className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold h-20" value={productForm.note} onChange={e => setProductForm({ ...productForm, note: e.target.value })} />
+
                   <div className="flex items-center justify-between p-2">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trạng thái:</span>
-                    <button type="button" onClick={() => setProductForm({...productForm, is_available: !productForm.is_available})} className={`px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all ${productForm.is_available ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                    <button type="button" onClick={() => setProductForm({ ...productForm, is_available: !productForm.is_available })} className={`px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all ${productForm.is_available ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                       {productForm.is_available ? 'Còn hàng' : 'Hết hàng'}
                     </button>
                   </div>
@@ -198,7 +217,7 @@ export default function AdminDashboard() {
                     {isEditing ? 'LƯU THAY ĐỔI' : 'THÊM VÀO MENU'}
                   </button>
                   {isEditing && (
-                    <button type="button" onClick={() => {setIsEditing(false); setProductForm({id:'', name:'', price:0, image_url:'', note:'', is_available:true, category:'Món chính'})}} className="w-full text-[10px] font-black text-gray-400 uppercase pt-2">Hủy bỏ</button>
+                    <button type="button" onClick={() => { setIsEditing(false); setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' }) }} className="w-full text-[10px] font-black text-gray-400 uppercase pt-2">Hủy bỏ</button>
                   )}
                 </div>
               </form>
@@ -214,13 +233,13 @@ export default function AdminDashboard() {
                       <h4 className="font-black text-slate-800 text-sm truncate uppercase tracking-tighter">{p.name}</h4>
                       <p className="text-orange-600 font-black text-xs mt-1">{p.price.toLocaleString()}đ</p>
                       <p className="text-[9px] text-gray-400 font-bold uppercase mt-1 italic">{p.category}</p>
-                      
+
                       <div className="flex gap-4 mt-3">
-                        <button onClick={() => {setIsEditing(true); setProductForm(p); window.scrollTo({top:0, behavior:'smooth'})}} className="text-[10px] font-black text-blue-500 uppercase underline">Sửa</button>
+                        <button onClick={() => { setIsEditing(true); setProductForm(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-[10px] font-black text-blue-500 uppercase underline">Sửa</button>
                         <button onClick={() => supabase.from('menu_items').update({ is_available: !p.is_available }).eq('id', p.id)} className={`text-[10px] font-black uppercase underline ${p.is_available ? 'text-orange-500' : 'text-green-600'}`}>
                           {p.is_available ? 'Báo hết' : 'Mở bán'}
                         </button>
-                        <button onClick={() => {if(confirm('Xóa món này vĩnh viễn?')) supabase.from('menu_items').delete().eq('id', p.id)}} className="text-[10px] font-black text-red-500 uppercase underline ml-auto">Xóa</button>
+                        <button onClick={() => { if (confirm('Xóa món này vĩnh viễn?')) supabase.from('menu_items').delete().eq('id', p.id) }} className="text-[10px] font-black text-red-500 uppercase underline ml-auto">Xóa</button>
                       </div>
                     </div>
                   </div>
