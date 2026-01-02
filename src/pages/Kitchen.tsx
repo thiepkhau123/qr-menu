@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   }
 
   const deleteOrder = async (id: string) => {
-    if (window.confirm('Xóa đơn này khỏi lịch sử?')) {
+    if (window.confirm('Xóa đơn này?')) {
       await supabase.from('orders').delete().eq('id', id)
       fetchOrders()
     }
@@ -42,26 +42,21 @@ export default function AdminDashboard() {
   const printOrder = (order: any) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-    const MY_BANK_ID = "Vietcombank"; 
-    const MY_ACCOUNT_NO = "1014363257"; 
-    const MY_NAME = "CHU QUAN NHU NGOC QUAN"; 
-    const qrUrl = `https://img.vietqr.io/image/${MY_BANK_ID}-${MY_ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=Thanh toan ban ${order.table_number}&accountName=${MY_NAME}`;
-
+    const qrUrl = `https://img.vietqr.io/image/Vietcombank-1014363257-compact2.jpg?amount=${order.total}&addInfo=Ban ${order.table_number}`;
+    
     printWindow.document.write(`
       <html>
         <head><style>
-          body { font-family: sans-serif; width: 75mm; padding: 10px; }
-          .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 5px; }
-          .item { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; border-bottom: 1px dashed #eee; }
-          .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 10px; }
-          .qr { text-align: center; margin-top: 10px; }
+          body { font-family: sans-serif; width: 75mm; padding: 5px; text-align: center; }
+          .item { display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px dashed #ccc; padding: 4px 0; }
         </style></head>
         <body>
-          <div class="header"><h2>NHƯ NGỌC QUÁN</h2><p>BÀN: ${order.table_number}</p></div>
+          <h3>NHƯ NGỌC QUÁN</h3>
+          <p>BÀN: ${order.table_number}</p>
           ${order.items.map((it: any) => `<div class="item"><span>${it.qty}x ${it.name}</span><span>${(it.price * it.qty).toLocaleString()}đ</span></div>`).join('')}
-          <div class="total">TỔNG: ${order.total.toLocaleString()}đ</div>
-          <div class="qr"><img src="${qrUrl}" width="140" /></div>
-          <script>window.onload = function() { window.print(); window.close(); }</script>
+          <h4>TỔNG: ${order.total.toLocaleString()}đ</h4>
+          <img src="${qrUrl}" width="150" />
+          <script>window.onload = () => { window.print(); window.close(); }</script>
         </body>
       </html>
     `);
@@ -69,18 +64,18 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-10">
-      {/* NAVBAR GỌN NHẸ */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <h1 className="text-lg font-black text-slate-800">NHƯ NGỌC <span className="text-orange-600 font-black">ADMIN</span></h1>
+    <div className="min-h-screen bg-[#f1f5f9] text-slate-900 pb-10">
+      {/* HEADER TỐI GIẢN */}
+      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+          <h1 className="text-base font-black tracking-tight">NHƯ NGỌC <span className="text-orange-600 font-medium">ADMIN</span></h1>
           
-          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 scale-90">
+          <div className="flex bg-slate-100 p-1 rounded-lg gap-1 border border-slate-200">
             {['pending', 'done', 'all'].map((s) => (
               <button 
                 key={s} onClick={() => setFilterStatus(s as any)}
-                className={`px-4 py-1.5 rounded-lg text-[11px] font-black uppercase transition-all ${
-                  filterStatus === s ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-400'
+                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${
+                  filterStatus === s ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 {s === 'pending' ? `Chờ (${stats.pendingCount})` : s === 'done' ? 'Xong' : 'Tất cả'}
@@ -88,71 +83,75 @@ export default function AdminDashboard() {
             ))}
           </div>
 
-          <div className="text-right">
-            <p className="text-[8px] font-black text-slate-400 uppercase">Doanh thu</p>
-            <p className="text-sm font-black text-green-600 leading-none">{stats.totalRevenue.toLocaleString()}đ</p>
+          <div className="text-right leading-tight">
+            <p className="text-[10px] font-bold text-green-600 uppercase tracking-tighter">{stats.totalRevenue.toLocaleString()}đ</p>
           </div>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* GRID CARD NHỎ LẠI (Grid 4 cột trên màn hình lớn) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {orders.map((o) => (
             <div 
               key={o.id} 
-              className={`bg-white rounded-2xl flex flex-col transition-all overflow-hidden border-[3px] shadow-sm
-                ${o.status === 'pending' ? 'border-orange-500 ring-4 ring-orange-50' : ''}
-                ${o.status === 'done' ? 'border-green-500 opacity-90' : ''}
-                ${filterStatus === 'all' && o.status === 'done' ? 'border-green-500' : ''}
+              className={`group bg-white rounded-xl flex flex-col transition-all duration-200 border-2 relative hover:shadow-md
+                ${o.status === 'pending' ? 'border-orange-500 ring-2 ring-orange-50' : 'border-green-500 opacity-90 hover:opacity-100'}
               `}
             >
-              {/* Card Header Nhỏ */}
-              <div className={`px-4 py-3 flex justify-between items-center ${o.status === 'pending' ? 'bg-orange-500 text-white' : 'bg-slate-50 text-slate-700'}`}>
-                <span className="text-lg font-black">BÀN {o.table_number}</span>
-                <span className="text-[10px] font-bold opacity-70">
+              {/* Header card nhỏ gọn */}
+              <div className={`px-4 py-2.5 flex justify-between items-center ${o.status === 'pending' ? 'bg-orange-500 text-white' : 'bg-green-500 text-white'}`}>
+                <span className="text-base font-black tracking-tighter">BÀN {o.table_number}</span>
+                <span className="text-[9px] font-medium opacity-80 uppercase tracking-widest italic">
                   {new Date(o.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </span>
               </div>
 
-              {/* Items Danh sách món thu gọn */}
-              <div className="p-4 flex-1 space-y-2">
-                {o.items?.map((it: any, i: number) => (
-                  <div key={i} className="flex justify-between items-start text-xs border-b border-slate-50 pb-1.5 last:border-0">
-                    <span className="font-bold text-slate-700">
-                      <span className="text-orange-600">{it.qty}x</span> {it.name}
-                      {it.level !== null && <span className="text-[9px] text-red-500 font-black ml-1">C{it.level}</span>}
-                    </span>
-                    <span className="text-[10px] text-slate-400">{(it.price * it.qty).toLocaleString()}</span>
-                  </div>
-                ))}
+              {/* Danh sách món ăn */}
+              <div className="p-4 flex-1">
+                <div className="space-y-2">
+                  {o.items?.map((it: any, i: number) => (
+                    <div key={i} className="flex justify-between items-start text-[11px] leading-tight text-slate-600">
+                      <span className="font-semibold flex-1 pr-2 uppercase">
+                        <b className="text-slate-900 mr-1 font-black">{it.qty}x</b> {it.name}
+                        {it.level !== null && <span className="text-red-500 ml-1 font-bold italic">C{it.level}</span>}
+                      </span>
+                      <span className="font-medium whitespace-nowrap">{(it.price * it.qty).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
                 
                 {o.note && (
-                  <div className="bg-amber-50 p-2 rounded-lg border border-amber-100 mt-1">
-                    <p className="text-[9px] text-amber-700 leading-tight"><b>Lưu ý:</b> {o.note}</p>
+                  <div className="mt-3 p-2 bg-slate-50 rounded-md border border-slate-100 italic">
+                    <p className="text-[9px] text-slate-500 leading-snug">Note: {o.note}</p>
                   </div>
                 )}
               </div>
 
-              {/* Footer Tổng tiền & Nút nhỏ */}
-              <div className="p-4 bg-slate-50/50 border-t border-slate-100">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-[10px] font-black text-slate-400 uppercase">Tổng</span>
-                  <span className="text-lg font-black text-slate-800">{o.total.toLocaleString()}đ</span>
+              {/* Footer thanh toán & nút */}
+              <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 rounded-b-xl">
+                <div className="flex justify-between items-end mb-3">
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Thành tiền</span>
+                  <span className="text-base font-black text-slate-800 leading-none">{o.total.toLocaleString()}đ</span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => printOrder(o)} className="py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-all">IN BILL</button>
+                  <button onClick={() => printOrder(o)} className="py-1.5 bg-white border border-slate-300 rounded-md text-[9px] font-black text-slate-500 hover:border-slate-400 active:bg-slate-50 transition-colors uppercase">In Bill</button>
                   {o.status === 'pending' ? (
-                    <button onClick={() => updateStatus(o.id, 'done')} className="py-2 bg-green-600 text-white rounded-lg text-[10px] font-black hover:bg-green-700 transition-all shadow-sm">XONG</button>
+                    <button onClick={() => updateStatus(o.id, 'done')} className="py-1.5 bg-orange-600 text-white rounded-md text-[9px] font-black hover:bg-orange-700 shadow-sm active:translate-y-0.5 transition-all uppercase tracking-wider">Xong</button>
                   ) : (
-                    <button onClick={() => deleteOrder(o.id)} className="py-2 bg-red-50 text-red-500 border border-red-100 rounded-lg text-[10px] font-black hover:bg-red-100 transition-all">XÓA</button>
+                    <button onClick={() => deleteOrder(o.id)} className="py-1.5 bg-red-50 text-red-500 border border-red-100 rounded-md text-[9px] font-black hover:bg-red-100 transition-colors uppercase">Xóa</button>
                   )}
                 </div>
               </div>
             </div>
           ))}
         </div>
+        
+        {orders.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Không có đơn hàng nào</p>
+          </div>
+        )}
       </main>
     </div>
   )
