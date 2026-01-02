@@ -31,12 +31,12 @@ export default function AdminDashboard() {
   // --- 1. HÀM IN BILL (ĐÃ TÍCH HỢP MÃ QR VÀO BILL) ---
   const handlePrint = (order: any) => {
     const BANK_ID = 'vcb'; // Thay mã ngân hàng của bạn
-    const ACCOUNT_NO = '1234567890'; // Thay số tài khoản
-    const ACCOUNT_NAME = 'NGUYEN VAN A'; // Thay tên không dấu
+    const ACCOUNT_NO = '1014363257'; // Thay số tài khoản
+    const ACCOUNT_NAME = 'KHAU TRAN NGOC THIEP'; // Thay tên không dấu
     const description = encodeURIComponent(`Ban ${order.table_number} thanh toan`);
-    
+
     // Link QR Code từ VietQR
-    const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=${description}&accountName=${ACCOUNT_NAME}`;
+    const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo= THANH TOAN BAN ${description}&accountName=${ACCOUNT_NAME}`;
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -49,45 +49,142 @@ export default function AdminDashboard() {
     `).join('');
 
     printWindow.document.write(`
-      <html>
-        <head>
-          <title>Bill Bàn ${order.table_number}</title>
-          <style>
-            body{font-family:sans-serif;padding:20px;color:#333;width:300px;margin:auto;}
-            .header{text-align:center;border-bottom:1px dashed #ccc;padding-bottom:10px;margin-bottom:10px;}
-            .total{border-top:1px dashed #ccc;padding-top:10px;margin-top:10px;font-weight:bold;text-align:right;font-size:18px;}
-            .qr-container{text-align:center;margin-top:20px;padding-top:10px;border-top:1px solid #eee;}
-            .qr-code{width:180px;height:180px;margin-bottom:5px;}
-            .footer{text-align:center;font-size:10px;color:#888;margin-top:10px;}
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h2 style="margin:0">NHƯ NGỌC QUÁN</h2>
-            <p style="margin:5px 0">Bàn: ${order.table_number}</p>
-            <p style="font-size:10px">${new Date(order.created_at).toLocaleString()}</p>
-          </div>
-          ${itemsHtml}
-          ${order.note ? `<p style="font-size: 12px; font-style: italic; border-top: 1px solid #eee; padding-top: 5px;">Ghi chú: ${order.note}</p>` : ''}
-          <div class="total">Tổng: ${order.total.toLocaleString()}đ</div>
-          
-          <div class="qr-container">
-            <p style="font-size:12px; font-weight:bold; margin-bottom:10px;">QUÉT MÃ ĐỂ THANH TOÁN</p>
-            <img src="${qrUrl}" class="qr-code" />
-            <p style="font-size:10px; margin:0;">${ACCOUNT_NAME}</p>
-            <p style="font-size:10px; margin:0;">${BANK_ID.toUpperCase()} - ${ACCOUNT_NO}</p>
-          </div>
+<html>
+  <head>
+    <title>Bill Bàn ${order.table_number}</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        padding: 16px;
+        color: #000;
+        width: 300px;
+        margin: auto;
+        font-size: 13px;
+      }
 
-          <div class="footer">Cảm ơn quý khách - Hẹn gặp lại!</div>
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(function(){ window.close(); }, 500);
-            };
-          </script>
-        </body>
-      </html>
-    `);
+      h2 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: 1px;
+      }
+
+      .center { text-align: center; }
+
+      .header {
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+        border-bottom: 1px dashed #999;
+      }
+
+      .info {
+        font-size: 12px;
+        margin: 2px 0;
+      }
+
+      .items {
+        margin-top: 8px;
+      }
+
+      .item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      .item-name {
+        max-width: 180px;
+      }
+
+      .total {
+        border-top: 1px dashed #999;
+        margin-top: 10px;
+        padding-top: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .note {
+        font-size: 12px;
+        font-style: italic;
+        border-top: 1px dashed #ccc;
+        margin-top: 8px;
+        padding-top: 5px;
+      }
+
+      .qr-container {
+        text-align: center;
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px dashed #999;
+      }
+
+      .qr-title {
+        font-size: 13px;
+        font-weight: bold;
+        margin-bottom: 8px;
+      }
+
+      .qr-code {
+        width: 160px;
+        height: 160px;
+      }
+
+      .bank-info {
+        font-size: 11px;
+        margin-top: 6px;
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 10px;
+        margin-top: 12px;
+        color: #555;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="header center">
+      <h2>NHƯ NGỌC QUÁN</h2>
+      <div class="info">Bàn: <strong>${order.table_number}</strong></div>
+      <div class="info">${new Date(order.created_at).toLocaleString()}</div>
+    </div>
+
+    <div class="items">
+      ${itemsHtml}
+    </div>
+
+    ${order.note ? `<div class="note">Ghi chú: ${order.note}</div>` : ''}
+
+    <div class="total">
+      <span>TỔNG CỘNG</span>
+      <span>${order.total.toLocaleString()}đ</span>
+    </div>
+
+    <div class="qr-container">
+      <div class="qr-title">QUÉT MÃ THANH TOÁN</div>
+      <img src="${qrUrl}" class="qr-code" />
+      <div class="bank-info">${ACCOUNT_NAME}</div>
+      <div class="bank-info">${BANK_ID.toUpperCase()} - ${ACCOUNT_NO}</div>
+    </div>
+
+    <div class="footer">
+      Cảm ơn quý khách ❤️<br/>
+      Hẹn gặp lại!
+    </div>
+
+    <script>
+      window.onload = function() {
+        window.print();
+        setTimeout(function() { window.close(); }, 500);
+      };
+    </script>
+  </body>
+</html>
+`);
+
     printWindow.document.close();
   };
 
@@ -95,7 +192,7 @@ export default function AdminDashboard() {
   const fetchReport = useCallback(async () => {
     const now = new Date();
     let query = supabase.from('orders').select('*').eq('status', 'done');
-    
+
     if (reportPeriod !== 'all') {
       let startDate = new Date();
       if (reportPeriod === 'day') startDate.setHours(0, 0, 0, 0);
@@ -107,10 +204,10 @@ export default function AdminDashboard() {
     const { data } = await query.order('created_at', { ascending: false });
 
     if (data) {
-      setStats(prev => ({ 
-        ...prev, 
-        totalRevenue: data.reduce((acc, o) => acc + o.total, 0), 
-        reportData: data 
+      setStats(prev => ({
+        ...prev,
+        totalRevenue: data.reduce((acc, o) => acc + o.total, 0),
+        reportData: data
       }));
     }
   }, [reportPeriod]);
@@ -178,7 +275,7 @@ export default function AdminDashboard() {
             <h1 className="font-black text-orange-600 text-xl uppercase italic tracking-tighter">NHƯ NGỌC ADMIN</h1>
             <div className="flex bg-gray-100 p-1 rounded-xl">
               {(['orders', 'menu', 'report'] as const).map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)} 
+                <button key={tab} onClick={() => setActiveTab(tab)}
                   className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === tab ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-400'}`}>
                   {tab === 'orders' ? 'Đơn hàng' : tab === 'menu' ? 'Thực đơn' : 'Báo cáo'}
                 </button>
@@ -230,14 +327,14 @@ export default function AdminDashboard() {
                       <span className="text-gray-400 uppercase text-[9px] font-bold">Tổng thanh toán</span>
                       <span className="font-black text-lg text-orange-600">{o.total.toLocaleString()}đ</span>
                     </div>
-                    
-                    <button onClick={() => handlePrint(o)} 
+
+                    <button onClick={() => handlePrint(o)}
                       className="w-full py-3 bg-white border-2 border-orange-200 rounded-xl text-[11px] font-black uppercase text-orange-600 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all active:scale-95 shadow-sm">
                       🖨️ In Hóa Đơn + QR
                     </button>
 
                     {o.status === 'pending' && (
-                      <button onClick={() => supabase.from('orders').update({ status: 'done' }).eq('id', o.id)} 
+                      <button onClick={() => supabase.from('orders').update({ status: 'done' }).eq('id', o.id)}
                         className="w-full py-3 rounded-xl text-[11px] font-black uppercase bg-orange-600 text-white shadow-lg shadow-orange-100 active:scale-95 transition-all">
                         Hoàn thành
                       </button>
@@ -251,12 +348,12 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             <div className="flex flex-wrap justify-center gap-2">
               {[
-                {id: 'day', label: 'Hôm nay'},
-                {id: 'week', label: '7 Ngày qua'},
-                {id: 'month', label: 'Tháng này'},
-                {id: 'all', label: 'Tất cả lịch sử'}
+                { id: 'day', label: 'Hôm nay' },
+                { id: 'week', label: '7 Ngày qua' },
+                { id: 'month', label: 'Tháng này' },
+                { id: 'all', label: 'Tất cả lịch sử' }
               ].map((p) => (
-                <button key={p.id} onClick={() => setReportPeriod(p.id as ReportPeriod)} 
+                <button key={p.id} onClick={() => setReportPeriod(p.id as ReportPeriod)}
                   className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${reportPeriod === p.id ? 'bg-green-600 text-white shadow-lg' : 'bg-white text-gray-400 border'}`}>
                   {p.label}
                 </button>
@@ -266,8 +363,8 @@ export default function AdminDashboard() {
               <div className="flex justify-between items-end mb-8 border-b pb-4">
                 <h2 className="text-lg font-black uppercase italic tracking-tighter">Chi tiết doanh thu</h2>
                 <div className="text-right">
-                   <p className="text-[10px] font-bold text-gray-400 uppercase">Tổng cộng</p>
-                   <p className="text-3xl font-black text-green-600">{stats.totalRevenue.toLocaleString()}đ</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Tổng cộng</p>
+                  <p className="text-3xl font-black text-green-600">{stats.totalRevenue.toLocaleString()}đ</p>
                 </div>
               </div>
               <table className="w-full text-left">
@@ -284,7 +381,7 @@ export default function AdminDashboard() {
                     <tr key={o.id} className="text-xs font-bold hover:bg-gray-50 transition-colors">
                       <td className="py-4 text-gray-400 font-normal">{new Date(o.created_at).toLocaleString()}</td>
                       <td className="py-4 text-orange-600">Bàn {o.table_number}</td>
-                      <td className="py-4 text-gray-600">{o.items.map((it:any) => `${it.qty} ${it.name}`).join(', ')}</td>
+                      <td className="py-4 text-gray-600">{o.items.map((it: any) => `${it.qty} ${it.name}`).join(', ')}</td>
                       <td className="py-4 text-right font-black">{o.total.toLocaleString()}đ</td>
                     </tr>
                   ))}
@@ -319,7 +416,7 @@ export default function AdminDashboard() {
                       <p className="text-orange-600 font-black text-xs">{p.price.toLocaleString()}đ</p>
                       <div className="flex gap-3 mt-2">
                         <button onClick={() => { setIsEditing(true); setProductForm(p); }} className="text-[10px] font-black text-blue-500 uppercase underline">Sửa</button>
-                        <button onClick={() => toggleAvailability(p.id, p.is_available)} 
+                        <button onClick={() => toggleAvailability(p.id, p.is_available)}
                           className={`text-[10px] font-black uppercase underline ${p.is_available ? 'text-amber-500' : 'text-green-600'}`}>
                           {p.is_available ? 'Báo Hết' : 'Mở Lại'}
                         </button>
