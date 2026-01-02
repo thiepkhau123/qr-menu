@@ -60,7 +60,7 @@ useEffect(() => {
         alert('🎉 Đơn hàng đã được gửi thành công!')
         setCart({})
       } else {
-        alert('Lỗi: ' + result.error)
+        alert(`Mã lỗi: ${result.code || 'Không mã'} - Chi tiết: ${result.error}`);
       }
     } catch (err) {
       alert('Lỗi kết nối server!')
