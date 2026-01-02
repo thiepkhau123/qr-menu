@@ -12,19 +12,23 @@ useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setTable(params.get('table') || 'Mang đi')
 
-    // SỬA DÒNG NÀY: Đổi 'products' thành 'menu_items'
-    // Và đổi 'active' thành 'is_available' (theo đúng database của bạn)
-    supabase
-      .from('menu_items') 
-      .select('*')
-      .eq('is_available', true) 
-      .then(({ data, error }) => {
-        if (error) {
-          console.error("Lỗi Supabase:", error.message);
-        } else {
-          setMenu(data || []);
-        }
-      })
+    const fetchMenu = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('menu_items') 
+          .select('*')
+          .eq('is_available', true) 
+        
+        if (error) throw error
+        setMenu(data || [])
+      } catch (err) {
+        console.error("Lỗi:", err)
+      } finally {
+        setLoading(false) // Thêm dòng này để biến 'setLoading' được sử dụng
+      }
+    }
+
+    fetchMenu()
   }, [])
 
   const totalPrice = menu.reduce((s, p) => s + (cart[p.id] || 0) * p.price, 0)
