@@ -6,14 +6,25 @@ export default function App() {
   const [cart, setCart] = useState<Record<string, number>>({})
   const [table, setTable] = useState('')
   const [isOrdering, setIsOrdering] = useState(false)
+  const [loading, setLoading] = useState(true) // Thêm trạng thái tải
 
-  useEffect(() => {
+useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setTable(params.get('table') || 'Mang đi')
 
-    // Lấy menu từ bảng products (hoặc menu_items tùy bạn chọn)
-    supabase.from('products').select('*').eq('active', true)
-      .then(({ data }) => setMenu(data || []))
+    // SỬA DÒNG NÀY: Đổi 'products' thành 'menu_items'
+    // Và đổi 'active' thành 'is_available' (theo đúng database của bạn)
+    supabase
+      .from('menu_items') 
+      .select('*')
+      .eq('is_available', true) 
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Lỗi Supabase:", error.message);
+        } else {
+          setMenu(data || []);
+        }
+      })
   }, [])
 
   const totalPrice = menu.reduce((s, p) => s + (cart[p.id] || 0) * p.price, 0)
@@ -54,40 +65,50 @@ export default function App() {
     }
   }
 
+  if (loading) return <div className="p-10 text-center">Đang tải thực đơn...</div>
+  if (menu.length === 0) return <div className="p-10 text-center text-gray-500">Thực đơn hiện đang trống hoặc chưa bật RLS Policy.</div>
+
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24">
-      <header className="p-4 bg-white shadow-sm sticky top-0 flex justify-between items-center">
-        <h1 className="font-bold text-orange-600 text-xl">QR Menu</h1>
-        <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-bold">Bàn {table}</span>
+    <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24 font-sans">
+      <header className="p-4 bg-white shadow-sm sticky top-0 flex justify-between items-center z-10">
+        <h1 className="font-bold text-orange-600 text-xl uppercase tracking-wider">QR Menu</h1>
+        <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-bold shadow-sm">Bàn {table}</span>
       </header>
 
       <main className="p-4 space-y-3">
         {menu.map(p => (
-          <div key={p.id} className="bg-white p-3 rounded-xl shadow-sm flex justify-between items-center">
-            <div>
-              <div className="font-medium">{p.name}</div>
-              <div className="text-orange-600 font-bold">{p.price.toLocaleString()}đ</div>
+          <div key={p.id} className="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-gray-100 transition-all active:scale-95">
+            <div className="flex-1">
+              <div className="font-bold text-gray-800">{p.name}</div>
+              <div className="text-gray-400 text-xs mb-1">{p.description}</div>
+              <div className="text-orange-600 font-extrabold">{Number(p.price).toLocaleString()}đ</div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 ml-4 bg-gray-50 p-1 rounded-full">
               {cart[p.id] > 0 && (
-                <button onClick={() => setCart({...cart, [p.id]: cart[p.id] - 1})} className="w-8 h-8 rounded-full border border-gray-300">-</button>
+                <button 
+                  onClick={() => setCart({...cart, [p.id]: cart[p.id] - 1})} 
+                  className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 border border-gray-100"
+                >-</button>
               )}
-              {cart[p.id] > 0 && <span className="font-bold">{cart[p.id]}</span>}
-              <button onClick={() => setCart({...cart, [p.id]: (cart[p.id] || 0) + 1})} className="w-8 h-8 rounded-full bg-orange-500 text-white font-bold">+</button>
+              {cart[p.id] > 0 && <span className="font-bold text-gray-800 w-4 text-center">{cart[p.id]}</span>}
+              <button 
+                onClick={() => setCart({...cart, [p.id]: (cart[p.id] || 0) + 1})} 
+                className="w-8 h-8 rounded-full bg-orange-500 text-white font-bold shadow-md shadow-orange-200 flex items-center justify-center"
+              >+</button>
             </div>
           </div>
         ))}
       </main>
 
       {totalPrice > 0 && (
-        <footer className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
+        <footer className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100">
           <button 
             disabled={isOrdering}
             onClick={handleOrder}
-            className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold flex justify-between px-6 active:scale-95 transition-transform disabled:bg-gray-400"
+            className="w-full bg-orange-600 text-white py-4 rounded-2xl font-bold flex justify-between px-6 shadow-xl shadow-orange-100 active:scale-95 transition-all disabled:bg-gray-400"
           >
-            <span>{isOrdering ? 'Đang gửi...' : 'ĐẶT MÓN'}</span>
-            <span>{totalPrice.toLocaleString()}đ</span>
+            <span className="uppercase tracking-wide">{isOrdering ? 'Đang gửi...' : 'Xác nhận đặt'}</span>
+            <span className="text-lg">{totalPrice.toLocaleString()}đ</span>
           </button>
         </footer>
       )}
