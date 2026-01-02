@@ -11,7 +11,7 @@ export default function AdminLogin() {
 
   // THÔNG TIN EMAILJS CỦA BẠN (Thay bằng mã bạn lấy ở Bước 1)
   const SERVICE_ID = 'service_vdc7gns';
-  const TEMPLATE_ID = 'template_ylhdo06';
+  const TEMPLATE_ID = 'template_buylbpp';
   const PUBLIC_KEY = 'BBGCJGfkvK-BZ-Rry';
 
   const handleSendCode = () => {
