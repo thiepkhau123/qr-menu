@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@supabase/supabase-js": "^2.89.0",
     "@vercel/node": "^5.5.16",
     "dotenv": "^17.2.3",
