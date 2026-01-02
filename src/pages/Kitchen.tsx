@@ -59,7 +59,7 @@ export default function AdminDashboard() {
     // CẤU HÌNH NGÂN HÀNG
     const MY_BANK_ID = "Vietcombank"; 
     const MY_ACCOUNT_NO = "1014363257"; 
-    const MY_NAME = "Khấu Trần Ngọc Thiệp"; 
+    const MY_NAME = "Chủ quán Như Ngọc Quán"; 
 
     const qrUrl = `https://img.vietqr.io/image/${MY_BANK_ID}-${MY_ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=Thanh toan Ban ${order.table_number}&accountName=${MY_NAME}`;
 
