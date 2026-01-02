@@ -61,7 +61,7 @@ export default function AdminDashboard() {
     const MY_ACCOUNT_NO = "1014363257"; 
     const MY_NAME = "Chủ quán Như Ngọc Quán"; 
 
-    const qrUrl = `https://img.vietqr.io/image/${MY_BANK_ID}-${MY_ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=Thanh toan Ban ${order.table_number}&accountName=${MY_NAME}`;
+    const qrUrl = `https://img.vietqr.io/image/${MY_BANK_ID}-${MY_ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=Thanh toán bàn ${order.table_number}&accountName=${MY_NAME}`;
 
     const itemsHtml = order.items.map((it: any) => `
       <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:5px 0; font-size: 14px;">
