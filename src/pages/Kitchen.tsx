@@ -1,122 +1,114 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-type Order = {
-  id: string
-  table_number: string
-  total: number
-  status: string
-  items: any[]
-  created_at: string
-}
-
-type MenuItem = {
-  id: string
-  name: string
-  price: number
-  is_available: boolean
-}
-
-export default function AdminFullConsole() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+export default function AdminConsole() {
+  const [orders, setOrders] = useState<any[]>([])
+  const [menuItems, setMenuItems] = useState<any[]>([])
   const [tab, setTab] = useState<'orders' | 'menu' | 'report'>('orders')
 
   const loadData = async () => {
-    const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
-    setOrders(ordersData || [])
-
-    const { data: menuData } = await supabase.from('menu_items').select('*').order('name')
-    setMenuItems(menuData || [])
+    const { data: o } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+    setOrders(o || [])
+    const { data: m } = await supabase.from('menu_items').select('*').order('name')
+    setMenuItems(m || [])
   }
 
   useEffect(() => {
     loadData()
-    const channel = supabase.channel('admin-full-realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
-        new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(() => {})
-        setOrders(prev => [payload.new as Order, ...prev])
-      })
+    const channel = supabase.channel('chef-room')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, loadData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, loadData)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  // Xử lý đơn hàng
   const markAsDone = async (id: string) => {
     await supabase.from('orders').update({ status: 'done' }).eq('id', id)
-    setOrders(orders.map(o => o.id === id ? { ...o, status: 'done' } : o))
   }
 
-  // Xóa đơn đã xong (Dọn màn hình)
-  const clearDoneOrders = async () => {
-    if (confirm("Bạn có muốn ẩn tất cả đơn đã hoàn thành không?")) {
-      const { error } = await supabase.from('orders').delete().eq('status', 'done')
-      if (!error) setOrders(orders.filter(o => o.status !== 'done'))
-    }
+  const deleteOrder = async (id: string) => {
+    if(confirm("Xóa đơn này?")) await supabase.from('orders').delete().eq('id', id)
   }
 
-  // Quản lý món
-  const toggleAvailability = async (id: string, currentStatus: boolean) => {
-    const { error } = await supabase.from('menu_items').update({ is_available: !currentStatus }).eq('id', id)
-    if (!error) {
-      setMenuItems(menuItems.map(item => item.id === id ? { ...item, is_available: !currentStatus } : item))
-    }
+  const toggleMenu = async (id: string, current: boolean) => {
+    await supabase.from('menu_items').update({ is_available: !current }).eq( 'id', id)
   }
 
-  // Tính toán thống kê
   const todayRevenue = orders
     .filter(o => new Date(o.created_at).toDateString() === new Date().toDateString())
-    .reduce((sum, o) => sum + o.total, 0)
+    .reduce((s, o) => s + o.total, 0)
 
   return (
-    <div className="max-w-4xl mx-auto p-4 pb-20 font-sans text-gray-800">
-      <header className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <h1 className="text-xl font-black text-orange-600">HỆ THỐNG QUẢN LÝ 🏪</h1>
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
-          {(['orders', 'menu', 'report'] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-lg text-sm font-bold transition ${tab === t ? 'bg-white shadow text-orange-600' : 'text-gray-500'}`}>
-              {t === 'orders' ? 'Đơn hàng' : t === 'menu' ? 'Món ăn' : 'Báo cáo'}
+    <div className="max-w-4xl mx-auto p-4 bg-gray-50 min-h-screen font-sans">
+      <header className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+        <h1 className="text-2xl font-black text-gray-900 tracking-tighter">QUẢN TRỊ CỬA HÀNG 🍜</h1>
+        <div className="flex bg-white p-1 rounded-2xl shadow-sm border">
+          {(['orders', 'menu', 'report'] as const).map(t => (
+            <button 
+              key={t} onClick={() => setTab(t)}
+              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${tab === t ? 'bg-orange-600 text-white shadow-lg' : 'text-gray-400'}`}
+            >
+              {t === 'orders' ? 'Đơn hàng' : t === 'menu' ? 'Thực đơn' : 'Doanh thu'}
             </button>
           ))}
         </div>
       </header>
 
-      {/* TAB 1: ĐƠN HÀNG */}
       {tab === 'orders' && (
-        <div className="space-y-4">
-          <button onClick={clearDoneOrders} className="text-sm text-gray-500 underline mb-2">Dọn dẹp đơn đã xong</button>
-          {orders.filter(o => o.status !== 'deleted').map(o => (
-            <div key={o.id} className={`p-4 rounded-2xl border-2 transition ${o.status === 'done' ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-orange-200 shadow-md'}`}>
-              <div className="flex justify-between mb-2">
-                <span className="text-lg font-black">BÀN {o.table_number}</span>
-                <span className="font-bold text-orange-600">{o.total.toLocaleString()}đ</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {orders.filter(o => o.status !== 'done').map(o => (
+            <div key={o.id} className="bg-white p-5 rounded-3xl shadow-md border-2 border-orange-100 relative overflow-hidden">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <span className="text-3xl font-black text-gray-900">BÀN {o.table_number}</span>
+                  <p className="text-xs text-gray-400 font-medium uppercase mt-1">{new Date(o.created_at).toLocaleTimeString()}</p>
+                </div>
+                <button onClick={() => deleteOrder(o.id)} className="text-gray-300 hover:text-red-500">✕</button>
               </div>
-              <div className="space-y-1 mb-3 bg-gray-50 p-3 rounded-xl text-sm">
-                {o.items?.map((item: any, idx: number) => (
-                  <div key={idx} className="flex justify-between">
-                    <span>{item.name} <b className="text-orange-600">x{item.quantity || item.qty}</b></span>
-                    <span>{(item.price * (item.quantity || item.qty)).toLocaleString()}đ</span>
+
+              <div className="space-y-3 mb-6">
+                {o.items?.map((item: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center bg-orange-50/50 p-3 rounded-2xl border border-orange-50">
+                    <div>
+                      <span className="font-bold text-gray-800">{item.name}</span>
+                      <span className="ml-2 text-orange-600 font-black text-lg">x{item.qty}</span>
+                    </div>
+                    <div className="bg-red-600 text-white px-3 py-1 rounded-lg font-black text-sm shadow-sm animate-pulse">
+                      CẤP {item.level}
+                    </div>
                   </div>
                 ))}
               </div>
-              {o.status !== 'done' && (
-                <button onClick={() => markAsDone(o.id)} className="w-full bg-orange-500 text-white py-3 rounded-xl font-black shadow-lg shadow-orange-100 uppercase tracking-tighter">Hoàn thành & Giao món</button>
-              )}
+
+              <button 
+                onClick={() => markAsDone(o.id)}
+                className="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-green-100 hover:bg-green-700 transition-all"
+              >
+                Hoàn thành
+              </button>
             </div>
           ))}
+          {orders.filter(o => o.status !== 'done').length === 0 && (
+            <div className="col-span-full py-20 text-center text-gray-400 font-bold">Hiện không có đơn hàng mới nào.</div>
+          )}
         </div>
       )}
 
-      {/* TAB 2: MENU */}
       {tab === 'menu' && (
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {menuItems.map(item => (
-            <div key={item.id} className="flex justify-between items-center p-4 bg-white border rounded-2xl shadow-sm">
-              <div>
-                <p className="font-bold">{item.name}</p>
-                <p className="text-sm text-orange-600 font-bold">{item.price.toLocaleString()}đ</p>
+            <div key={item.id} className="flex items-center gap-4 p-3 bg-white border rounded-2xl shadow-sm">
+              <img src={item.image_url} className="w-16 h-16 object-cover rounded-xl" />
+              <div className="flex-1">
+                <p className="font-bold text-gray-800 leading-none">{item.name}</p>
+                <p className="text-sm font-black text-orange-600 mt-1">{item.price.toLocaleString()}đ</p>
               </div>
-              <button onClick={() => toggleAvailability(item.id, item.is_available)} className={`px-6 py-2 rounded-xl font-bold transition ${item.is_available ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+              <button 
+                onClick={() => toggleMenu(item.id, item.is_available)}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all ${
+                  item.is_available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}
+              >
                 {item.is_available ? 'Đang bán' : 'Hết hàng'}
               </button>
             </div>
@@ -124,21 +116,31 @@ export default function AdminFullConsole() {
         </div>
       )}
 
-      {/* TAB 3: BÁO CÁO */}
       {tab === 'report' && (
-        <div className="space-y-6 text-center">
-          <div className="bg-gradient-to-br from-orange-500 to-red-600 p-8 rounded-3xl text-white shadow-xl">
-            <p className="opacity-80 uppercase text-xs font-bold tracking-widest mb-2">Doanh thu hôm nay</p>
-            <h2 className="text-4xl font-black">{todayRevenue.toLocaleString()} VNĐ</h2>
-            <p className="mt-2 text-sm italic">{orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString()).length} đơn hàng</p>
+        <div className="space-y-4">
+          <div className="bg-white p-8 rounded-3xl border-2 border-orange-50 text-center shadow-sm">
+            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Doanh thu hôm nay</p>
+            <h2 className="text-5xl font-black text-gray-900">{todayRevenue.toLocaleString()}<span className="text-orange-500">đ</span></h2>
           </div>
-          <div className="bg-white p-6 rounded-3xl border shadow-sm">
-            <h3 className="font-bold mb-4 text-left">💡 Mẹo quản lý</h3>
-            <ul className="text-left text-sm text-gray-500 space-y-2">
-              <li>• Kiểm tra đơn hàng thường xuyên để đảm bảo món ra đúng bàn.</li>
-              <li>• Cập nhật trạng thái "Hết hàng" ngay khi bếp hết nguyên liệu.</li>
-              <li>• Cuối ngày nên dùng nút "Dọn dẹp đơn" để trang web chạy nhanh hơn.</li>
-            </ul>
+          <div className="bg-white rounded-3xl border overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 font-bold text-gray-500 uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="p-4 text-left">Bàn</th>
+                  <th className="p-4 text-left">Thời gian</th>
+                  <th className="p-4 text-right">Tổng tiền</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString()).map(o => (
+                  <tr key={o.id}>
+                    <td className="p-4 font-bold">Bàn {o.table_number}</td>
+                    <td className="p-4 text-gray-400">{new Date(o.created_at).toLocaleTimeString()}</td>
+                    <td className="p-4 text-right font-black text-orange-600">{o.total.toLocaleString()}đ</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
