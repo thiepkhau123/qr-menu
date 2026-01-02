@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState<OrderStatus>('pending')
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('day')
   const [stats, setStats] = useState({ totalRevenue: 0, pendingCount: 0, reportData: [] as any[] })
-  
+
   // Biến state để ẩn đơn hàng trên giao diện (Ý số 2)
   const [hiddenOrderIds, setHiddenOrderIds] = useState<string[]>([]);
 
@@ -43,9 +43,9 @@ export default function AdminDashboard() {
   }, [navigate]);
 
   const handlePrint = (order: any) => {
-    const BANK_ID = 'vcb'; 
-    const ACCOUNT_NO = '1014363257'; 
-    const ACCOUNT_NAME = 'KHAU TRAN NGOC THIEP'; 
+    const BANK_ID = 'vcb';
+    const ACCOUNT_NO = '1014363257';
+    const ACCOUNT_NAME = 'KHAU TRAN NGOC THIEP';
     const description = encodeURIComponent(`Ban ${order.table_number} thanh toan`);
     const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=${description}&accountName=${ACCOUNT_NAME}`;
 
@@ -125,24 +125,48 @@ export default function AdminDashboard() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // 1. Chuẩn bị dữ liệu để gửi đi
+      // Chúng ta bóc tách 'id' ra vì database sẽ tự sinh ID mới khi thêm mới
+      const { id, ...dataToSave } = productForm;
+
+      // Đảm bảo giá tiền là số và các trường văn bản không bị null
+      const finalPayload = {
+        name: dataToSave.name.trim(),
+        price: Number(dataToSave.price) || 0,
+        category: dataToSave.category || 'Món chính',
+        image_url: dataToSave.image_url || '',
+        note: dataToSave.note || '', // Đảm bảo note luôn là chuỗi, tránh lỗi NULL
+        is_available: dataToSave.is_available ?? true
+      };
+
       if (isEditing) {
-        const { id, ...payload } = productForm;
-        await supabase.from('menu_items').update(payload).eq('id', id);
-        alert('Cập nhật thành công!');
-      } else {
-        // Loại bỏ id khi thêm mới để database tự tạo
-        const { id, ...payload } = productForm;
-        const { error } = await supabase.from('menu_items').insert([payload]);
+        // TRƯỜNG HỢP CẬP NHẬT
+        const { error } = await supabase
+          .from('menu_items')
+          .update(finalPayload)
+          .eq('id', id);
         if (error) throw error;
-        alert('Thêm món thành công!');
+        alert('Đã cập nhật món ăn!');
+      } else {
+        // TRƯỜNG HỢP THÊM MỚI
+        const { error } = await supabase
+          .from('menu_items')
+          .insert([finalPayload]);
+        if (error) throw error;
+        alert('Đã thêm món mới vào thực đơn!');
       }
-      setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' });
+
+      // 2. Reset Form và cập nhật giao diện
+      setProductForm({
+        id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính'
+      });
       setIsEditing(false);
       fetchMenu();
     } catch (error: any) {
-      alert('Lỗi: ' + error.message);
+      console.error('Lỗi lưu món:', error);
+      alert('Không thể lưu: ' + (error.message || 'Lỗi hệ thống'));
     }
-  }
+  };
 
   // --- SỬA Ý 1: HÀM HOÀN THÀNH ---
   const markAsDone = async (orderId: string) => {
@@ -259,7 +283,7 @@ export default function AdminDashboard() {
         ) : activeTab === 'report' ? (
           <div className="space-y-6">
             <div className="flex flex-wrap justify-center gap-2">
-              {[ { id: 'day', label: 'Hôm nay' }, { id: 'week', label: '7 Ngày qua' }, { id: 'month', label: 'Tháng này' }, { id: 'all', label: 'Tất cả' }].map((p) => (
+              {[{ id: 'day', label: 'Hôm nay' }, { id: 'week', label: '7 Ngày qua' }, { id: 'month', label: 'Tháng này' }, { id: 'all', label: 'Tất cả' }].map((p) => (
                 <button key={p.id} onClick={() => setReportPeriod(p.id as ReportPeriod)}
                   className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${reportPeriod === p.id ? 'bg-green-600 text-white shadow-lg' : 'bg-white text-gray-400 border'}`}>
                   {p.label}
@@ -290,17 +314,65 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
               <form onSubmit={handleSave} className="bg-white p-6 rounded-[2.5rem] border-2 border-gray-100 shadow-sm sticky top-24">
-                <h2 className="text-lg font-black uppercase mb-6 italic tracking-tighter">{isEditing ? 'Cập nhật món' : 'Thêm món mới'}</h2>
+                <h2 className="text-lg font-black uppercase mb-6 italic tracking-tighter">
+                  {isEditing ? 'Cập nhật món' : 'Thêm món mới'}
+                </h2>
                 <div className="space-y-4">
-                  <input type="text" placeholder="Tên món" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500" value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} required />
-                  <input type="number" placeholder="Giá" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500" value={productForm.price || ''} onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })} required />
-                  <input type="text" placeholder="Nhóm" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold" value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })} required />
-                  <input type="text" placeholder="Link ảnh" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-[10px] font-bold" value={productForm.image_url} onChange={e => setProductForm({ ...productForm, image_url: e.target.value })} />
-                  {/* Ý 3: Nút Thêm hoạt động tốt hơn với handleSave mới */}
+                  <input
+                    type="text"
+                    placeholder="Tên món (ví dụ: Mì cay hải sản)"
+                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500"
+                    value={productForm.name}
+                    onChange={e => setProductForm({ ...productForm, name: e.target.value })}
+                    required
+                  />
+                  <input
+                    type="number"
+                    placeholder="Giá tiền"
+                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500"
+                    value={productForm.price || ''}
+                    onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })}
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Nhóm (mì cay, đồ uống...)"
+                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold"
+                    value={productForm.category}
+                    onChange={e => setProductForm({ ...productForm, category: e.target.value })}
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Link ảnh món ăn"
+                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-[10px] font-bold"
+                    value={productForm.image_url}
+                    onChange={e => setProductForm({ ...productForm, image_url: e.target.value })}
+                  />
+                  {/* Ô nhập Ghi chú mới thêm */}
+                  <textarea
+                    placeholder="Ghi chú món ăn (ví dụ: Cay vừa, ngon...)"
+                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500 min-h-[80px]"
+                    value={productForm.note}
+                    onChange={e => setProductForm({ ...productForm, note: e.target.value })}
+                  />
+
                   <button type="submit" className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg active:scale-95 transition-all">
                     {isEditing ? 'LƯU THAY ĐỔI' : 'THÊM VÀO MENU'}
                   </button>
-                  {isEditing && <button type="button" onClick={() => setIsEditing(false)} className="w-full text-[10px] font-black text-gray-400 uppercase pt-2 underline">Hủy</button>}
+
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: 'Món chính' });
+                      }}
+                      className="w-full text-[10px] font-black text-gray-400 uppercase pt-2 underline"
+                    >
+                      Hủy bỏ
+                    </button>
+                  )}
                 </div>
               </form>
             </div>
