@@ -6,32 +6,21 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState<'pending' | 'done' | 'all'>('pending')
   const [stats, setStats] = useState({ totalRevenue: 0, pendingCount: 0 })
 
-  // 1. Khởi tạo và Đăng ký Realtime
   useEffect(() => {
     fetchOrders()
-    
     const subscription = supabase
       .channel('admin_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-        fetchOrders()
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
       .subscribe()
-
     return () => { supabase.removeChannel(subscription) }
   }, [filterStatus])
 
-  // 2. Các hàm xử lý dữ liệu
   const fetchOrders = async () => {
     let query = supabase.from('orders').select('*')
-    
-    if (filterStatus !== 'all') {
-      query = query.eq('status', filterStatus)
-    }
-    
+    if (filterStatus !== 'all') query = query.eq('status', filterStatus)
     const { data } = await query.order('created_at', { ascending: false })
     if (data) {
       setOrders(data)
-      // Thống kê nhanh
       const total = data.reduce((acc, o) => acc + (o.status === 'done' ? o.total : 0), 0)
       const pending = data.filter(o => o.status === 'pending').length
       setStats({ totalRevenue: total, pendingCount: pending })
@@ -39,207 +28,149 @@ export default function AdminDashboard() {
   }
 
   const updateStatus = async (id: string, newStatus: string) => {
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', id)
-    if (error) alert(error.message)
-    else fetchOrders()
+    await supabase.from('orders').update({ status: newStatus }).eq('id', id)
+    fetchOrders()
   }
 
-  const deleteOrder = async (id: string) => {
-    if (window.confirm('Bạn có chắc muốn xóa đơn này không?')) {
-      await supabase.from('orders').delete().eq('id', id)
-      fetchOrders()
-    }
-  }
-
-  // 3. Hàm in hóa đơn kèm VietQR
   const printOrder = (order: any) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    // CẤU HÌNH NGÂN HÀNG
+    // Config VietQR
     const MY_BANK_ID = "Vietcombank"; 
     const MY_ACCOUNT_NO = "1014363257"; 
-    const MY_NAME = "Chủ quán Như Ngọc Quán"; 
-
-    const qrUrl = `https://img.vietqr.io/image/${MY_BANK_ID}-${MY_ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=Thanh toán bàn ${order.table_number}&accountName=${MY_NAME}`;
-
-    const itemsHtml = order.items.map((it: any) => `
-      <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:5px 0; font-size: 14px;">
-        <span>${it.qty}x ${it.name} ${it.level !== null ? `<b>(C${it.level})</b>` : ''}</span>
-        <span>${(it.price * it.qty).toLocaleString()}đ</span>
-      </div>
-    `).join('');
+    const MY_NAME = "Chu quan Nhu Ngoc Quan"; 
+    const qrUrl = `https://img.vietqr.io/image/${MY_BANK_ID}-${MY_ACCOUNT_NO}-compact2.jpg?amount=${order.total}&addInfo=Thanh toan ban ${order.table_number}&accountName=${MY_NAME}`;
 
     printWindow.document.write(`
       <html>
-        <head>
-          <title>Hóa đơn - Bàn ${order.table_number}</title>
-          <style>
-            @page { size: 80mm auto; margin: 0; }
-            body { font-family: 'Arial', sans-serif; width: 75mm; margin: 0 auto; padding: 10px; color: #333; }
-            .header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; }
-            .qr-box { text-align: center; margin-top: 15px; padding: 10px; border: 1px solid #eee; border-radius: 10px; }
-            .qr-img { width: 160px; height: 160px; }
-            .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; }
-            .footer { text-align: center; font-size: 11px; margin-top: 15px; color: #666; font-style: italic; }
-          </style>
-        </head>
+        <head><style>
+          body { font-family: sans-serif; width: 75mm; padding: 10px; }
+          .header { text-align: center; border-bottom: 2px solid #000; }
+          .item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #ccc; }
+          .total { font-size: 20px; font-weight: bold; text-align: right; margin-top: 10px; }
+          .qr { text-align: center; margin-top: 15px; }
+        </style></head>
         <body>
-          <div class="header">
-            <h2 style="margin:0;">NHƯ NGỌC QUÁN</h2>
-            <p style="font-size:12px; margin:5px 0;">HÓA ĐƠN THANH TOÁN</p>
-          </div>
-          <div style="font-size:13px; margin-bottom: 10px;">
-            <div><b>BÀN: ${order.table_number}</b></div>
-            <div>Giờ: ${new Date(order.created_at).toLocaleString('vi-VN')}</div>
-          </div>
-          <div class="items">${itemsHtml}</div>
-          <div class="total-row">
-            <span>TỔNG CỘNG:</span>
-            <span>${order.total.toLocaleString()}đ</span>
-          </div>
-          <div class="qr-box">
-            <p style="margin:0 0 5px 0; font-size:12px; font-weight:bold; color: #e63946;">QUÉT MÃ CHUYỂN KHOẢN</p>
-            <img src="${qrUrl}" class="qr-img" />
-            <p style="margin:5px 0 0 0; font-size:10px;">${MY_BANK_ID} - ${MY_ACCOUNT_NO}</p>
-            <p style="margin:2px 0 0 0; font-size:10px; font-weight:bold;">${MY_NAME}</p>
-          </div>
-          <div class="footer">Cảm ơn Quý khách! Hẹn gặp lại.</div>
-          <script>
-            window.onload = function() { 
-              setTimeout(() => { window.print(); window.close(); }, 500);
-            }
-          </script>
+          <div class="header"><h2>NHƯ NGỌC QUÁN</h2><p>BÀN: ${order.table_number}</p></div>
+          ${order.items.map((it: any) => `<div class="item"><span>${it.qty}x ${it.name}</span><span>${(it.price * it.qty).toLocaleString()}đ</span></div>`).join('')}
+          <div class="total">TỔNG: ${order.total.toLocaleString()}đ</div>
+          <div class="qr"><img src="${qrUrl}" width="160" /></div>
+          <script>window.onload = function() { window.print(); window.close(); }</script>
         </body>
       </html>
     `);
     printWindow.document.close();
   }
 
-  // 4. Giao diện Admin
   return (
-    <div className="min-h-screen bg-gray-100 font-sans pb-10">
-      {/* THANH ĐIỀU HƯỚNG & THỐNG KÊ */}
-      <nav className="bg-white shadow-md p-4 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex flex-col">
-            <h1 className="text-xl font-black text-orange-600 uppercase italic leading-none">Admin Dashboard 👨‍🍳</h1>
-            <span className="text-[10px] text-gray-400 font-bold tracking-widest mt-1 uppercase">Hệ thống quản lý Như Ngọc Quán</span>
-          </div>
-          
-          <div className="flex bg-gray-100 p-1.5 rounded-2xl border border-gray-200">
-            {(['pending', 'done', 'all'] as const).map((status) => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-6 py-2 rounded-xl text-xs font-black transition-all uppercase ${
-                  filterStatus === status 
-                  ? 'bg-white shadow-sm text-orange-600' 
-                  : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                {status === 'pending' ? 'Đang chờ' : status === 'done' ? 'Đã xong' : 'Tất cả'}
-              </button>
-            ))}
+    <div className="min-h-screen bg-[#f8fafc] font-sans pb-10 text-slate-900">
+      {/* HEADER GỌN GÀNG */}
+      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-black text-orange-600 flex items-center gap-2">
+              QUẢN LÝ ĐƠN HÀNG <span className="text-xs bg-orange-100 px-2 py-1 rounded-full uppercase tracking-tighter">Live</span>
+            </h1>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Như Ngọc Quán Control Panel</p>
           </div>
 
-          <div className="bg-green-50 px-4 py-2 rounded-2xl border border-green-100 text-right">
-            <p className="text-[9px] text-green-600 font-black uppercase leading-none">Doanh thu đơn xong</p>
-            <p className="text-xl font-black text-green-700">{stats.totalRevenue.toLocaleString()}đ</p>
+          <div className="flex items-center gap-6">
+            <div className="hidden md:block text-right border-r border-slate-200 pr-6">
+              <p className="text-[10px] font-black text-slate-400 uppercase">Doanh thu (Đã xong)</p>
+              <p className="text-xl font-black text-green-600">{stats.totalRevenue.toLocaleString()}đ</p>
+            </div>
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+              {['pending', 'done', 'all'].map((s) => (
+                <button 
+                  key={s} onClick={() => setFilterStatus(s as any)}
+                  className={`px-4 py-2 rounded-lg text-xs font-black transition-all uppercase ${filterStatus === s ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  {s === 'pending' ? `Chờ (${stats.pendingCount})` : s === 'done' ? 'Xong' : 'Tất cả'}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto p-4 md:p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <main className="max-w-7xl mx-auto p-4 md:p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {orders.map((o) => (
-            <div 
-              key={o.id} 
-              className={`bg-white rounded-[2.5rem] shadow-sm border-2 flex flex-col overflow-hidden transition-all ${
-                o.status === 'done' ? 'border-gray-100 opacity-75' : 'border-orange-200 ring-8 ring-orange-50'
-              }`}
-            >
-              {/* Header Card */}
-              <div className={`p-5 flex justify-between items-center ${o.status === 'done' ? 'bg-gray-50' : 'bg-orange-50'}`}>
-                <div>
-                  <span className="text-2xl font-black text-gray-800">BÀN: {o.table_number}</span>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">
-                    ID: #{o.id.slice(0, 5)}
-                  </p>
+            <div key={o.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+              
+              {/* TRẠNG THÁI & BÀN */}
+              <div className={`px-5 py-4 flex justify-between items-center ${o.status === 'pending' ? 'bg-orange-50/50' : 'bg-slate-50'}`}>
+                <div className="flex items-center gap-3">
+                  <span className={`w-3 h-3 rounded-full ${o.status === 'pending' ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`}></span>
+                  <span className="text-xl font-black">BÀN {o.table_number}</span>
                 </div>
-                <div className="text-right">
-                   <span className="text-[10px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm">
-                    {new Date(o.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </span>
-                </div>
+                <span className="text-[11px] font-bold text-slate-400">#{o.id.slice(-4)} | {new Date(o.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
               </div>
 
-              {/* Danh sách món ăn */}
-              <div className="p-6 flex-1">
-                <div className="space-y-4">
-                  {o.items?.map((it: any, i: number) => (
-                    <div key={i} className="flex justify-between items-start group">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-extrabold text-gray-800 group-hover:text-orange-600 transition-colors">
-                          <span className="bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-lg mr-2">{it.qty}x</span> 
-                          {it.name}
-                        </span>
-                        {it.level !== null && (
-                          <span className="text-[10px] text-white font-black uppercase mt-1 bg-red-500 w-fit px-2 py-0.5 rounded-full">
-                            🔥 Cấp độ: {it.level}
-                          </span>
-                        )}
+              {/* DANH SÁCH MÓN - DỄ NHÌN HƠN */}
+              <div className="p-5 flex-1 space-y-3">
+                {o.items?.map((it: any, i: number) => (
+                  <div key={i} className="flex justify-between items-start border-b border-slate-50 pb-2 last:border-0">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center bg-slate-900 text-white text-[10px] font-bold h-5 w-5 rounded-md">{it.qty}</span>
+                        <span className="text-sm font-bold text-slate-700">{it.name}</span>
                       </div>
-                      <span className="text-xs text-gray-400 font-bold italic">{(it.price * it.qty).toLocaleString()}đ</span>
+                      {it.level !== null && <span className="text-[9px] font-black text-red-500 ml-7">🔥 CẤP ĐỘ: {it.level}</span>}
                     </div>
-                  ))}
-                </div>
+                    <span className="text-xs font-medium text-slate-400">{(it.price * it.qty).toLocaleString()}đ</span>
+                  </div>
+                ))}
 
                 {o.note && (
-                  <div className="mt-5 p-4 bg-yellow-50 rounded-2xl border border-yellow-100 relative">
-                    <span className="absolute -top-2 left-4 bg-yellow-400 text-white text-[8px] font-black px-2 py-0.5 rounded-full">GHI CHÚ</span>
-                    <p className="text-xs text-yellow-800 font-medium">"{o.note}"</p>
+                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 mt-2">
+                    <p className="text-[10px] font-black text-amber-600 uppercase">Ghi chú từ khách:</p>
+                    <p className="text-xs text-amber-800 italic font-medium leading-relaxed">{o.note}</p>
                   </div>
                 )}
+              </div>
+
+              {/* TỔNG TIỀN & THAO TÁC */}
+              <div className="p-5 bg-slate-50/50 border-t border-slate-100 mt-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-xs font-bold text-slate-400 uppercase">Thanh toán</span>
+                  <span className="text-xl font-black text-slate-900">{o.total.toLocaleString()}đ</span>
+                </div>
                 
-                <div className="mt-6 pt-4 border-t-2 border-dashed border-gray-100 flex justify-between items-end">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Thành tiền</span>
-                  <span className="text-2xl font-black text-orange-600 leading-none">{o.total.toLocaleString()}đ</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={() => printOrder(o)}
+                    className="h-11 bg-white border border-slate-200 rounded-xl text-[11px] font-black text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    📄 IN BILL
+                  </button>
+                  {o.status === 'pending' ? (
+                    <button 
+                      onClick={() => updateStatus(o.id, 'done')}
+                      className="h-11 bg-orange-600 text-white rounded-xl text-[11px] font-black hover:bg-orange-700 shadow-lg shadow-orange-100 transition-all uppercase tracking-tight"
+                    >
+                      Xong & Thu tiền
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => updateStatus(o.id, 'pending')}
+                      className="h-11 bg-slate-200 text-slate-600 rounded-xl text-[11px] font-black hover:bg-slate-300 transition-all uppercase"
+                    >
+                      Mở lại đơn
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Nút bấm thao tác */}
-              <div className="p-5 bg-gray-50/50 grid grid-cols-2 gap-3">
-                <button 
-                  onClick={() => printOrder(o)}
-                  className="bg-white text-gray-700 py-3.5 rounded-2xl font-black text-[10px] border border-gray-200 shadow-sm hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
-                  📄 IN PHIẾU
-                </button>
-                
-                {o.status === 'pending' ? (
-                  <button 
-                    onClick={() => updateStatus(o.id, 'done')}
-                    className="bg-green-600 text-white py-3.5 rounded-2xl font-black text-[10px] shadow-lg shadow-green-100 hover:bg-green-700 active:scale-95 transition-all uppercase tracking-tighter"
-                  >
-                    Thu Tiền & Xong
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => deleteOrder(o.id)}
-                    className="bg-red-50 text-red-500 py-3.5 rounded-2xl font-black text-[10px] hover:bg-red-100 active:scale-95 transition-all"
-                  >
-                    XÓA LỊCH SỬ
-                  </button>
-                )}
-              </div>
             </div>
           ))}
         </div>
-
+        
         {orders.length === 0 && (
-          <div className="text-center py-24 bg-white rounded-[3rem] border-4 border-dashed border-gray-100">
-            <p className="text-gray-300 font-black text-2xl italic uppercase">Không có đơn hàng nào!</p>
+          <div className="flex flex-col items-center justify-center py-40 text-slate-300">
+            <div className="text-5xl mb-4">☁️</div>
+            <p className="font-bold uppercase tracking-widest text-sm">Hiện không có đơn hàng nào</p>
           </div>
         )}
       </main>
