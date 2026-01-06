@@ -388,9 +388,15 @@ export default function AdminDashboard() {
                 /* HIỂN THỊ KHI TRỐNG ĐƠN */
                 <div className="col-span-full py-24 flex flex-col items-center justify-center bg-white rounded-[3rem] border-2 border-dashed border-gray-200 shadow-inner">
                   <div className="relative mb-6">
-                    <div className="text-6xl animate-bounce drop-shadow-lg"> 🍜 </div>
+                    <div className="text-8xl animate-bounce drop-shadow-2xl"> 🍜 </div>
+                    {/* HIỆU ỨNG KHÓI BAY */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-20">
+                      <div className="absolute w-4 h-4 bg-gray-200 rounded-full animate-steam" style={{ top: '60%', left: '30%', animationDelay: '0s' }}></div>
+                      <div className="absolute w-5 h-5 bg-gray-200 rounded-full animate-steam" style={{ top: '50%', left: '60%', animationDelay: '0.5s' }}></div>
+                      <div className="absolute w-3 h-3 bg-gray-200 rounded-full animate-steam" style={{ top: '70%', left: '45%', animationDelay: '1s' }}></div>
+                    </div>
                     {/* Đèn xanh nhấp nháy báo hiệu mạng ổn định */}
-                    <div className="absolute -top-1 -right-1 flex h-4 w-4">
+                    <div className="absolute -top-3 -right-3 flex h-4 w-4">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
                     </div>

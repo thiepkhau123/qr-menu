@@ -40,3 +40,19 @@ body {
     @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
   }
 }
+
+@keyframes steam {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-80px) scale(1.2); /* Điều chỉnh độ cao và kích thước khói bay lên */
+    opacity: 0;
+  }
+}
+
+.animate-steam {
+  animation: steam 3s linear infinite; /* Điều chỉnh tốc độ và kiểu chuyển động */
+  filter: blur(2px); /* Làm mờ khói để trông thật hơn */
+}
