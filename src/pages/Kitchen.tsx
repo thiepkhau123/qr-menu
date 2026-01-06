@@ -341,6 +341,12 @@ export default function AdminDashboard() {
                   <button key={s} onClick={() => setFilterStatus(s)}
                     className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${filterStatus === s ? 'bg-orange-500 text-white shadow-lg' : 'bg-white text-gray-400 border'}`}>
                     {s === 'pending' ? `Chờ (${stats.pendingCount})` : s === 'done' ? 'Đã xong' : 'Tất cả'}
+                    {/* Thêm dòng text phụ chỉ khi là tab 'pending' (Chờ) */}
+                    {s === 'pending' && (
+                      <span className="text-[7px] opacity-80 leading-none mt-0.5">
+                        Chưa có đơn mới..
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
