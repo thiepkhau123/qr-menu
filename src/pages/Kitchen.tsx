@@ -245,7 +245,7 @@ export default function AdminDashboard() {
 
               <button
                 onClick={handleLogout}
-                className="bg-red-50 text-red-500 p-2 md:px-4 rounded-xl flex items-center gap-2 hover:bg-red-500 hover:text-white active:scale-95 transition-all"
+                className="bg-red-50 text-red-500 py-2 px-3 rounded-xl flex items-center gap-2 hover:bg-red-500 hover:text-white active:scale-95 transition-all shrink-0"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -263,9 +263,9 @@ export default function AdminDashboard() {
                   <line x1="21" y1="12" x2="9" y2="12"></line>
                 </svg>
 
-                {/* Chữ "Thoát" - Ẩn trên màn hình cực nhỏ, hiện trên mobile trung bình và PC */}
-                <span className="text-[10px] md:text-xs font-black uppercase tracking-tight hidden xs:block">
-                  Thoát
+                {/* Đã xóa hidden để chữ luôn xuất hiện */}
+                <span className="text-[11px] font-black uppercase tracking-tighter">
+                  Đăng xuất
                 </span>
               </button>
             </div>
