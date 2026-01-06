@@ -200,35 +200,55 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-900 pb-20 font-sans">
-      <nav className="bg-white border-b sticky top-0 z-50 p-4 shadow-sm">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex gap-4 items-center">
-            <h1 className="font-black text-orange-600 text-xl uppercase italic tracking-tighter">NHƯ NGỌC ADMIN</h1>
+      <nav className="bg-white border-b sticky top-0 z-50 p-2 md:p-4 shadow-sm">
+        <div className="max-w-6xl mx-auto flex flex-col gap-2 md:flex-row md:justify-between md:items-center">
+
+          {/* Dòng 1: Logo và Tabs (Tối ưu để không bị tràn) */}
+          <div className="flex items-center justify-between md:justify-start gap-2">
+            <h1 className="font-black text-orange-600 text-sm sm:text-base md:text-xl uppercase italic tracking-tighter shrink-0">
+              NHƯ NGỌC
+            </h1>
+
             <div className="flex bg-gray-100 p-1 rounded-xl">
               {(['orders', 'menu', 'report'] as const).map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === tab ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-400'}`}>
-                  {tab === 'orders' ? 'Đơn hàng' : tab === 'menu' ? 'Thực đơn' : 'Báo cáo'}
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-2 py-1.5 sm:px-3 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeTab === tab ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-400'
+                    }`}
+                >
+                  {tab === 'orders' ? 'Đơn' : tab === 'menu' ? 'Kho' : 'Báo cáo'}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsSoundEnabled(!isSoundEnabled)}
-              className={`p-2 rounded-xl transition-all ${isSoundEnabled ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400'}`}
+          {/* Dòng 2: Doanh thu và Tiện ích (Tự động canh lề theo màn hình) */}
+          <div className="flex items-center justify-between md:justify-end gap-3 border-t pt-2 md:border-none md:pt-0">
+            <div
+              className="flex items-center gap-2 cursor-pointer bg-green-50 px-3 py-1 rounded-xl"
+              onClick={() => setActiveTab('report')}
             >
-              {isSoundEnabled ? "🔔" : "🔕"}
-            </button>
-            <div className="text-right cursor-pointer" onClick={() => setActiveTab('report')}>
-              <p className="text-[8px] font-bold text-gray-400 uppercase">Doanh thu</p>
-              <p className="text-lg font-black text-green-600 leading-none">{stats.totalRevenue.toLocaleString()}đ</p>
+              <p className="text-[8px] font-bold text-green-600 uppercase leading-none">Doanh thu:</p>
+              <p className="text-sm md:text-lg font-black text-green-700 leading-none">
+                {stats.totalRevenue.toLocaleString()}đ
+              </p>
             </div>
-            <button onClick={handleLogout} className="bg-red-50 text-red-500 p-2 rounded-xl hover:bg-red-500 hover:text-white transition-all">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsSoundEnabled(!isSoundEnabled)}
+                className={`p-2 rounded-xl transition-all ${isSoundEnabled ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400'}`}
+              >
+                {isSoundEnabled ? "🔔" : "🔕"}
+              </button>
+
+              <button onClick={handleLogout} className="bg-red-50 text-red-500 p-2 rounded-xl active:bg-red-500 active:text-white transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              </button>
+            </div>
           </div>
+
         </div>
       </nav>
 
