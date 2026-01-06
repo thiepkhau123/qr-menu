@@ -67,7 +67,7 @@ body {
   border-radius: 50%;
   animation: steam-rise 2.5s infinite ease-in-out; /* Chỉnh tốc độ chậm lại xíu cho thực tế */
   position: absolute;
-  bottom: 10%; /* Đảm bảo khói bắt đầu từ mặt trên tô mì */
+  bottom: -10%; /* Đảm bảo khói bắt đầu từ mặt trên tô mì */
 }
 
 /* Điều chỉnh vị trí các sợi khói để không dính chùm */
