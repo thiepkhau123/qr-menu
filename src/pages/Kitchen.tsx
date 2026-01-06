@@ -351,37 +351,62 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {orders.filter(o => !hiddenOrderIds.includes(o.id)).map(o => (
-                <div key={o.id} className={`bg-white rounded-[2rem] hover-card duration-300 hover:shadow-xl hover:-translate-y-1 border-2 flex flex-col overflow-hidden transition-all ${o.status === 'pending' ? 'border-orange-500 shadow-md scale-[1.01]' : 'border-gray-100 opacity-60'}`}>
-                  <div className={`p-4 flex justify-between items-center ${o.status === 'pending' ? 'bg-orange-500 text-white' : 'bg-gray-500 text-white'}`}>
-                    <b className="italic font-black uppercase tracking-tighter text-base">Bàn {o.table_number}</b>
-                    <span className="text-[10px] font-bold bg-black/10 px-2 py-1 rounded-lg">{new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                  <div className="p-4 flex-1 space-y-2">
-                    {o.items?.map((it: any, i: number) => (
-                      <div key={i} className="flex justify-between text-xs font-bold border-b border-gray-50 pb-1.5">
-                        <span className="text-gray-700">{it.qty}x {it.name} {it.level && <span className="text-red-500">🌶️{it.level}</span>}</span>
-                        <span className="text-gray-400">{(it.price * it.qty).toLocaleString()}đ</span>
-                      </div>
-                    ))}
-                    {o.note && <p className="text-[10px] bg-amber-50 p-2 rounded-lg text-amber-700 italic border border-amber-100">Ghi chú: {o.note}</p>}
-                  </div>
-                  <div className="p-4 bg-gray-50 border-t flex flex-col gap-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-gray-400 uppercase text-[9px] font-bold">Tổng tiền</span>
-                      <span className="font-black text-lg text-orange-600">{o.total.toLocaleString()}đ</span>
+              {/* PHẦN CHỈNH SỬA CHÍNH: KIỂM TRA ĐƠN TRỐNG */}
+              {orders.filter(o => !hiddenOrderIds.includes(o.id)).length > 0 ? (
+                orders.filter(o => !hiddenOrderIds.includes(o.id)).map(o => (
+                  <div key={o.id} className={`bg-white rounded-[2rem] hover-card duration-300 hover:shadow-xl hover:-translate-y-1 border-2 flex flex-col overflow-hidden transition-all ${o.status === 'pending' ? 'border-orange-500 shadow-md scale-[1.01]' : 'border-gray-100 opacity-60'}`}>
+                    <div className={`p-4 flex justify-between items-center ${o.status === 'pending' ? 'bg-orange-500 text-white' : 'bg-gray-500 text-white'}`}>
+                      <b className="italic font-black uppercase tracking-tighter text-base">Bàn {o.table_number}</b>
+                      <span className="text-[10px] font-bold bg-black/10 px-2 py-1 rounded-lg">{new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <button onClick={() => handlePrint(o)} className="w-full py-3 bg-white border-2 border-orange-200 rounded-xl text-[11px] font-black uppercase text-orange-600 shadow-sm hover:bg-orange-50 hover:border-orange-400 transition-colors">
-                      🖨️ In Hóa Đơn
-                    </button>
-                    {o.status === 'pending' && (
-                      <button onClick={() => markAsDone(o.id)} className="w-full py-3 rounded-xl text-[11px] font-black uppercase bg-orange-600 text-white shadow-lg">
-                        Hoàn thành
+                    <div className="p-4 flex-1 space-y-2">
+                      {o.items?.map((it: any, i: number) => (
+                        <div key={i} className="flex justify-between text-xs font-bold border-b border-gray-50 pb-1.5">
+                          <span className="text-gray-700">{it.qty}x {it.name} {it.level && <span className="text-red-500">🌶️{it.level}</span>}</span>
+                          <span className="text-gray-400">{(it.price * it.qty).toLocaleString()}đ</span>
+                        </div>
+                      ))}
+                      {o.note && <p className="text-[10px] bg-amber-50 p-2 rounded-lg text-amber-700 italic border border-amber-100">Ghi chú: {o.note}</p>}
+                    </div>
+                    <div className="p-4 bg-gray-50 border-t flex flex-col gap-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-gray-400 uppercase text-[9px] font-bold">Tổng tiền</span>
+                        <span className="font-black text-lg text-orange-600">{o.total.toLocaleString()}đ</span>
+                      </div>
+                      <button onClick={() => handlePrint(o)} className="w-full py-3 bg-white border-2 border-orange-200 rounded-xl text-[11px] font-black uppercase text-orange-600 shadow-sm hover:bg-orange-50 hover:border-orange-400 transition-colors">
+                        🖨️ In Hóa Đơn
                       </button>
-                    )}
+                      {o.status === 'pending' && (
+                        <button onClick={() => markAsDone(o.id)} className="w-full py-3 rounded-xl text-[11px] font-black uppercase bg-orange-600 text-white shadow-lg">
+                          Hoàn thành
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                /* HIỂN THỊ KHI TRỐNG ĐƠN */
+                <div className="col-span-full py-24 flex flex-col items-center justify-center bg-white rounded-[3rem] border-2 border-dashed border-gray-200 shadow-inner">
+                  <div className="relative mb-6">
+                    <div className="text-6xl animate-bounce">☕</div>
+                    {/* Đèn xanh nhấp nháy báo hiệu mạng ổn định */}
+                    <div className="absolute -top-1 -right-1 flex h-4 w-4">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
+                    </div>
+                  </div>
+
+                  <h3 className="text-gray-400 font-black uppercase italic tracking-tighter text-xl">
+                    {filterStatus === 'pending' ? 'Chưa có đơn hàng mới' : 'Danh sách trống'}
+                  </h3>
+
+                  <div className="mt-4 flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100">
+                    <p className="text-[10px] text-green-600 font-black uppercase tracking-widest animate-pulse">
+                      Hệ thống đang trực tuyến
+                    </p>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         ) : activeTab === 'report' ? (
