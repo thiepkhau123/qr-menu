@@ -370,7 +370,7 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 dark:bg-slate-800 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* PHẦN CHỈNH SỬA CHÍNH: KIỂM TRA ĐƠN TRỐNG */}
               {orders.filter(o => !hiddenOrderIds.includes(o.id)).length > 0 ? (
                 orders.filter(o => !hiddenOrderIds.includes(o.id)).map(o => (
