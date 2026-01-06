@@ -115,29 +115,32 @@ export default function App() {
       </header>
 
       {/* SEARCH & CATEGORY: Group lại cho PC dễ nhìn */}
-      {/* SEARCH & CATEGORY: Sửa lại để không vỡ layout trên Mobile */}
       <div className="flex flex-col gap-4 mb-6">
-        {/* Thanh tìm kiếm - Luôn chiếm 100% chiều rộng trên mobile */}
-        <div className="relative text-gray-400 focus-within:text-orange-500 w-full">
+        {/* Thanh tìm kiếm */}
+        <div className="relative text-gray-400 focus-within:text-orange-500 w-full group">
           <input
             type="text"
             placeholder="Tìm món ăn nhanh..."
-            className="w-full p-4 pl-12 bg-white rounded-2xl shadow-sm border-none text-sm focus:ring-2 focus:ring-orange-500 text-gray-800 appearance-none"
+            /* Thay đổi text-sm thành text-base (16px) để chống auto-zoom trên iOS */
+            className="w-full h-14 p-4 pl-12 bg-white rounded-2xl shadow-sm border-none text-base focus:ring-2 focus:ring-orange-500 text-gray-800 appearance-none outline-none"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔍</span>
+          {/* Căn giữa icon bằng Flex thay vì Absolute top để ổn định hơn */}
+          <div className="absolute left-4 top-0 h-full flex items-center pointer-events-none">
+            <span className="text-xl">🔍</span>
+          </div>
         </div>
 
-        {/* Danh mục - Cho phép cuộn ngang mượt mà */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar items-center pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+        {/* Danh mục - Tối ưu cuộn ngang cho mọi màn hình */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar items-center pb-2 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth">
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCat(cat)}
-              className={`px-5 py-2.5 rounded-2xl text-[11px] font-black whitespace-nowrap transition-all uppercase flex-shrink-0 ${selectedCat === cat
+              className={`px-5 py-2.5 rounded-2xl text-[11px] font-black whitespace-nowrap transition-all uppercase flex-shrink-0 active:scale-95 ${selectedCat === cat
                   ? 'bg-orange-600 text-white shadow-md'
-                  : 'bg-white text-gray-400 border border-gray-100 hover:bg-gray-100'
+                  : 'bg-white text-gray-400 border border-gray-100'
                 }`}
             >
               {cat}
