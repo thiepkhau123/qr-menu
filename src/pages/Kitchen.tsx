@@ -129,22 +129,73 @@ export default function AdminDashboard() {
 
     printWindow.document.write(`
       <html>
-        <head><title>Bill Bàn ${order.table_number}</title><style>
-          body { font-family: sans-serif; padding: 16px; width: 300px; margin: auto; }
+      <head>
+        <title>Bill Bàn ${order.table_number}</title>
+        <style>
+          body { font-family: 'Courier New', Courier, monospace; padding: 10px; width: 280px; margin: auto; color: #000; }
           .center { text-align: center; }
-          .header { border-bottom: 1px dashed #999; padding-bottom: 8px; margin-bottom: 8px; }
-          .total { border-top: 1px dashed #999; margin-top: 10px; padding-top: 8px; font-weight: bold; display: flex; justify-content: space-between; font-size: 16px; }
-          .qr-container { text-align: center; margin-top: 14px; border-top: 1px dashed #999; padding-top: 10px; }
-          .qr-code { width: 160px; }
-        </style></head>
-        <body>
-          <div class="header center"><h2>NHƯ NGỌC QUÁN</h2><div>Bàn: ${order.table_number}</div></div>
-          <div>${itemsHtml}</div>
-          <div class="total"><span>TỔNG</span><span>${order.total.toLocaleString()}đ</span></div>
-          <div class="qr-container"><img src="${qrUrl}" class="qr-code" /><div>${ACCOUNT_NAME}</div></div>
-          <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script>
-        </body>
-      </html>
+          .bold { font-weight: bold; }
+          .header { border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+          .shop-name { font-size: 18px; font-weight: 900; margin: 0; }
+          .info-line { font-size: 11px; margin: 2px 0; }
+          .title { font-size: 14px; margin: 10px 0; text-transform: uppercase; font-weight: bold; }
+          .table-header { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 6px; font-weight: bold; }
+          .total-section { border-top: 1px dashed #000; margin-top: 10px; padding-top: 8px; }
+          .total-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 3px; }
+          .final-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; margin-top: 5px; }
+          .footer { text-align: center; margin-top: 15px; font-size: 11px; font-style: italic; }
+          .qr-container { text-align: center; margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px; }
+          .qr-code { width: 130px; filter: grayscale(100%); }
+        </style>
+      </head>
+      <body>
+        <div class="header center">
+          <div class="shop-name">NHƯ NGỌC QUÁN</div>
+          <div class="info-line">ĐC: Chợ Trà Câu - Phổ Thạnh - Đức Phổ</div>
+          <div class="info-line">SĐT: 036.xxx.xxxx</div>
+          <div class="title">HOÁ ĐƠN THANH TOÁN</div>
+          <div class="info-line">Ngày: ${new Date().toLocaleDateString('vi-VN')} - Giờ: ${new Date().toLocaleTimeString('vi-VN')}</div>
+          <div class="info-line bold">Bàn: ${order.table_number}</div>
+        </div>
+
+        <div class="table-header">
+          <div style="flex: 1;">Tên món</div>
+          <div style="width: 30px; text-align: center;">SL</div>
+          <div style="width: 70px; text-align: right;">T.Tiền</div>
+        </div>
+
+        <div>${itemsHtml}</div>
+
+        <div class="total-section">
+          <div class="total-row">
+            <span>Tổng thành tiền:</span>
+            <span>${order.total.toLocaleString()}</span>
+          </div>
+          <div class="final-total">
+            <span>TỔNG CỘNG:</span>
+            <span>${order.total.toLocaleString()}đ</span>
+          </div>
+        </div>
+
+        <div class="qr-container">
+          <img src="${qrUrl}" class="qr-code" />
+          <div style="font-size: 10px; margin-top: 5px; font-weight: bold;">QUÉT MÃ ĐỂ THANH TOÁN</div>
+          <div style="font-size: 9px;">STK: 123456789 - MB Bank</div>
+        </div>
+
+        <div class="footer">
+          Xin cảm ơn, hẹn gặp lại quý khách!<br>
+          WIFI: nhu-ngoc-quan / MK: 88888888
+        </div>
+
+        <script>
+          window.onload = () => { 
+            window.print(); 
+            setTimeout(() => window.close(), 500); 
+          }
+        </script>
+      </body>
+    </html>
     `);
     printWindow.document.close();
   };
