@@ -107,7 +107,7 @@ export default function App() {
         </div>
         <button
           onClick={() => setShowHistory(true)}
-          className="bg-gray-900 text-white px-3 py-2 md:px-6 md:py-3 rounded-2xl shadow-lg text-[10px] md:text-sm font-black active:scale-95 transition-all flex items-center gap-2"
+          className="bg-green-500 text-white px-3 py-2 md:px-6 md:py-3 rounded-2xl shadow-lg text-[10px] md:text-sm font-black active:scale-95 transition-all flex items-center gap-2"
         >
           <span>ĐƠN ĐÃ ĐẶT</span>
           <span className="bg-orange-500 text-white w-5 h-5 flex items-center justify-center rounded-full text-[10px]">{myOrders.length}</span>
