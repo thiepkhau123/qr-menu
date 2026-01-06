@@ -112,18 +112,26 @@ export default function AdminDashboard() {
     if (!printWindow) return;
 
     const itemsHtml = order.items.map((it: any) => {
-      // Kiểm tra nếu tên món có chữ "Mì cay"
-      const isMiCay = it.name.toLowerCase().includes('mì cay');
-      // Chỉ hiển thị cấp nếu là mì cay và giá trị level hợp lệ
+      // Kiểm tra mì cay để hiển thị cấp độ
+      const isMiCay = it.name.toLowerCase().includes('mì');
       const levelDisplay = (isMiCay && it.level !== undefined && it.level !== null)
-        ? `(Cấp ${it.level})`
+        ? `<br><span style="font-size: 11px; font-weight: normal;">(Cấp ${it.level})</span>`
         : '';
 
       return `
-    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; font-family: sans-serif;">
-      <span>${it.qty}x ${it.name} ${levelDisplay}</span>
-      <span>${(it.price * it.qty).toLocaleString()}đ</span>
-    </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; font-family: sans-serif; align-items: flex-start;">
+          <div style="flex: 1; padding-right: 5px; line-height: 1.2;">
+             ${it.name}${levelDisplay}
+          </div>
+      
+          <div style="width: 30px; text-align: center; font-weight: bold;">
+             ${it.qty}
+          </div>
+      
+          <div style="width: 75px; text-align: right;">
+             ${(it.price * it.qty).toLocaleString()}
+          </div>
+          </div>
   `;
     }).join('');
 
@@ -160,7 +168,7 @@ export default function AdminDashboard() {
 
         <div class="table-header">
           <div style="flex: 1;">Tên món</div>
-          <div style="width: 30px; text-align: center;">SL</div>
+          <div style="width: 30px; text-align: center;">SL </div>
           <div style="width: 70px; text-align: right;">T.Tiền</div>
         </div>
 
