@@ -337,19 +337,78 @@ export default function AdminDashboard() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
-              <form onSubmit={handleSave} className="bg-white p-6 rounded-[2.5rem] border-2 border-gray-100 shadow-sm sticky top-24">
-                <h2 className="text-lg font-black uppercase mb-6 italic tracking-tighter">{isEditing ? 'Cập nhật món' : 'Thêm món mới'}</h2>
-                <div className="space-y-4">
-                  <input type="text" placeholder="Tên món" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500" value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} required />
-                  <input type="number" placeholder="Giá tiền" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-orange-500" value={productForm.price || ''} onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })} required />
-                  <input type="text" placeholder="Nhóm" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold" value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })} required />
-                  <input type="text" placeholder="Link ảnh" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold" value={productForm.image_url} onChange={e => setProductForm({ ...productForm, image_url: e.target.value })} />
-                  <textarea placeholder="Ghi chú" className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-sm font-bold min-h-[80px]" value={productForm.note} onChange={e => setProductForm({ ...productForm, note: e.target.value })} />
-                  <button type="submit" className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg">
+              <form
+                onSubmit={handleSave}
+                className="bg-white p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border-2 border-gray-100 shadow-sm md:sticky md:top-24"
+              >
+                <h2 className="text-base md:text-lg font-black uppercase mb-4 md:mb-6 italic tracking-tighter">
+                  {isEditing ? 'Cập nhật món' : 'Thêm món mới'}
+                </h2>
+
+                <div className="space-y-3 md:space-y-4">
+                  {/* Tất cả các ô nhập liệu được đổi từ text-sm sang text-base (16px) 
+         để ngăn iPhone tự động zoom gây vỡ layout 
+      */}
+                  <input
+                    type="text"
+                    placeholder="Tên món"
+                    className="w-full h-12 p-3.5 bg-gray-50 border-none rounded-2xl text-base md:text-sm font-bold focus:ring-2 focus:ring-orange-500 appearance-none"
+                    value={productForm.name}
+                    onChange={e => setProductForm({ ...productForm, name: e.target.value })}
+                    required
+                  />
+
+                  <input
+                    type="number"
+                    placeholder="Giá tiền"
+                    className="w-full h-12 p-3.5 bg-gray-50 border-none rounded-2xl text-base md:text-sm font-bold focus:ring-2 focus:ring-orange-500 appearance-none"
+                    value={productForm.price || ''}
+                    onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })}
+                    required
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Nhóm"
+                    className="w-full h-12 p-3.5 bg-gray-50 border-none rounded-2xl text-base md:text-sm font-bold appearance-none"
+                    value={productForm.category}
+                    onChange={e => setProductForm({ ...productForm, category: e.target.value })}
+                    required
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Link ảnh"
+                    className="w-full h-12 p-3.5 bg-gray-50 border-none rounded-2xl text-base md:text-sm font-bold appearance-none"
+                    value={productForm.image_url}
+                    onChange={e => setProductForm({ ...productForm, image_url: e.target.value })}
+                  />
+
+                  <textarea
+                    placeholder="Ghi chú"
+                    className="w-full p-3.5 bg-gray-50 border-none rounded-2xl text-base md:text-sm font-bold min-h-[80px] appearance-none"
+                    value={productForm.note}
+                    onChange={e => setProductForm({ ...productForm, note: e.target.value })}
+                  />
+
+                  <button
+                    type="submit"
+                    className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black text-xs md:text-[11px] uppercase shadow-lg active:scale-95 transition-transform"
+                  >
                     {isEditing ? 'LƯU THAY ĐỔI' : 'THÊM VÀO MENU'}
                   </button>
+
                   {isEditing && (
-                    <button type="button" onClick={() => { setIsEditing(false); setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: '(Nhập Loại Sản Phẩm)' }); }} className="w-full text-[10px] font-black text-gray-400 uppercase underline">Hủy</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setProductForm({ id: '', name: '', price: 0, image_url: '', note: '', is_available: true, category: '(Nhập Loại Sản Phẩm)' });
+                      }}
+                      className="w-full py-2 text-[10px] font-black text-gray-400 uppercase underline"
+                    >
+                      Hủy bỏ
+                    </button>
                   )}
                 </div>
               </form>
