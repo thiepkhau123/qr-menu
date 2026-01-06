@@ -388,27 +388,33 @@ export default function AdminDashboard() {
                 /* HIỂN THỊ KHI TRỐNG ĐƠN */
                 <div className="col-span-full py-24 flex flex-col items-center justify-center bg-white rounded-[3rem] border-2 border-dashed border-gray-200 shadow-inner">
                   <div className="relative mb-6">
-                    <div className="text-8xl animate-bounce drop-shadow-2xl"> 🍜 </div>
-                    {/* HIỆU ỨNG KHÓI BAY */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-20">
-                      <div className="absolute w-4 h-4 bg-gray-200 rounded-full animate-steam" style={{ top: '60%', left: '30%', animationDelay: '0s' }}></div>
-                      <div className="absolute w-5 h-5 bg-gray-200 rounded-full animate-steam" style={{ top: '50%', left: '60%', animationDelay: '0.5s' }}></div>
-                      <div className="absolute w-3 h-3 bg-gray-200 rounded-full animate-steam" style={{ top: '70%', left: '45%', animationDelay: '1s' }}></div>
+                    {/* HIỆU ỨNG LÀN KHÓI THỰC TẾ */}
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-16 h-16 flex justify-around items-end overflow-hidden">
+                      <div className="steam-line line-1"></div>
+                      <div className="steam-line line-2"></div>
+                      <div className="steam-line line-3"></div>
                     </div>
-                    {/* Đèn xanh nhấp nháy báo hiệu mạng ổn định */}
-                    <div className="absolute -top-3 -right-3 flex h-4 w-4">
+
+                    {/* Tô mì cay LỚN HƠN */}
+                    <div className="text-8xl animate-bounce drop-shadow-2xl relative z-10">
+                      🍜
+                    </div>
+
+                    {/* Đèn xanh tín hiệu - Đã đẩy ra góc thoáng */}
+                    <div className="absolute -top-4 -right-4 flex h-5 w-5 z-20">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
+                      <span className="relative inline-flex rounded-full h-5 w-5 bg-green-500 border-2 border-white shadow-sm"></span>
                     </div>
                   </div>
 
-                  <h3 className="text-gray-400 font-black uppercase italic tracking-tighter text-xl">
-                    {filterStatus === 'pending' ? 'Chưa có đơn hàng mới' : 'Danh sách trống'}
+                  <h3 className="text-gray-400 font-black uppercase italic tracking-tighter text-xl mt-6">
+                    Chưa có đơn hàng mới
                   </h3>
 
-                  <div className="mt-4 flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100">
-                    <p className="text-[10px] text-green-600 font-black uppercase tracking-widest animate-pulse">
-                      Hệ thống đang trực tuyến
+                  <div className="mt-4 flex items-center gap-2 bg-green-50 px-5 py-2.5 rounded-full border border-green-100 shadow-sm animate-pulse">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <p className="text-[11px] text-green-600 font-black uppercase tracking-widest">
+                      Hệ thống đang kết nối ổn định
                     </p>
                   </div>
                 </div>
