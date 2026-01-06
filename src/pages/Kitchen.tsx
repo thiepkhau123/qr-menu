@@ -151,8 +151,8 @@ export default function AdminDashboard() {
       <body>
         <div class="header center">
           <div class="shop-name">NHƯ NGỌC QUÁN</div>
-          <div class="info-line">ĐC: Chợ Trà Câu - Phổ Thạnh - Đức Phổ</div>
-          <div class="info-line">SĐT: 036.xxx.xxxx</div>
+          <div class="info-line">ĐC: 42 Phạm Văn Đồng, Bình Sơn, Quảng Ngãi</div>
+          <div class="info-line">SĐT: 0862210623</div>
           <div class="title">HOÁ ĐƠN THANH TOÁN</div>
           <div class="info-line">Ngày: ${new Date().toLocaleDateString('vi-VN')} - Giờ: ${new Date().toLocaleTimeString('vi-VN')}</div>
           <div class="info-line bold">Bàn: ${order.table_number}</div>
@@ -180,7 +180,6 @@ export default function AdminDashboard() {
         <div class="qr-container">
           <img src="${qrUrl}" class="qr-code" />
           <div style="font-size: 10px; margin-top: 5px; font-weight: bold;">QUÉT MÃ ĐỂ THANH TOÁN</div>
-          <div style="font-size: 9px;">STK: 123456789 - MB Bank</div>
         </div>
 
         <div class="footer">
