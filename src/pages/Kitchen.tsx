@@ -388,7 +388,7 @@ export default function AdminDashboard() {
                 /* HIỂN THỊ KHI TRỐNG ĐƠN */
                 <div className="col-span-full py-24 flex flex-col items-center justify-center bg-white rounded-[3rem] border-2 border-dashed border-gray-200 shadow-inner">
                   <div className="relative mb-6">
-                    <div className="text-6xl animate-bounce drop-shadow-lg">🍜</div>
+                    <div className="text-6xl animate-bounce drop-shadow-lg"> 🍜 </div>
                     {/* Đèn xanh nhấp nháy báo hiệu mạng ổn định */}
                     <div className="absolute -top-1 -right-1 flex h-4 w-4">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
