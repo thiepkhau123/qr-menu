@@ -103,7 +103,7 @@ export default function App() {
       <header className="flex flex-row justify-between items-center mb-6 gap-4 sticky top-0 bg-gray-50/80 backdrop-blur-md z-40 py-2">
         <div className="flex flex-col">
           <h1 className="font-black text-orange-600 italic text-xl md:text-3xl tracking-tighter leading-none uppercase">NHƯ NGỌC QUÁN 🌶️</h1>
-          <span className="text-[10px] md:text-xs font-bold text-gray-400 mt-1 uppercase tracking-widest bg-white w-fit px-2 py-0.5 rounded-full shadow-sm">Bàn: {table}</span>
+          <span className="text-[10px] md:text-xs font-bold text-black mt-1 uppercase tracking-widest bg-orange-600 w-fit px-2 py-0.5 rounded-full shadow-sm">Bàn: {table}</span>
         </div>
         <button
           onClick={() => setShowHistory(true)}
@@ -115,22 +115,30 @@ export default function App() {
       </header>
 
       {/* SEARCH & CATEGORY: Group lại cho PC dễ nhìn */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="md:col-span-1 relative text-gray-400 focus-within:text-orange-500">
+      {/* SEARCH & CATEGORY: Sửa lại để không vỡ layout trên Mobile */}
+      <div className="flex flex-col gap-4 mb-6">
+        {/* Thanh tìm kiếm - Luôn chiếm 100% chiều rộng trên mobile */}
+        <div className="relative text-gray-400 focus-within:text-orange-500 w-full">
           <input
-            type="text" placeholder="Tìm món ăn nhanh..."
-            className="w-full p-4 pl-12 bg-white rounded-2xl shadow-sm border-none text-sm focus:ring-2 focus:ring-orange-500 text-gray-800"
-            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+            type="text"
+            placeholder="Tìm món ăn nhanh..."
+            className="w-full p-4 pl-12 bg-white rounded-2xl shadow-sm border-none text-sm focus:ring-2 focus:ring-orange-500 text-gray-800 appearance-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <span className="absolute left-4 top-4 text-lg">🔍</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔍</span>
         </div>
 
-        <div className="md:col-span-2 flex gap-2 overflow-x-auto no-scrollbar items-center">
+        {/* Danh mục - Cho phép cuộn ngang mượt mà */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar items-center pb-2 -mx-4 px-4 md:mx-0 md:px-0">
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCat(cat)}
-              className={`px-5 py-2.5 rounded-2xl text-[11px] font-black whitespace-nowrap transition-all uppercase ${selectedCat === cat ? 'bg-orange-600 text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100 hover:bg-gray-100'}`}
+              className={`px-5 py-2.5 rounded-2xl text-[11px] font-black whitespace-nowrap transition-all uppercase flex-shrink-0 ${selectedCat === cat
+                  ? 'bg-orange-600 text-white shadow-md'
+                  : 'bg-white text-gray-400 border border-gray-100 hover:bg-gray-100'
+                }`}
             >
               {cat}
             </button>
