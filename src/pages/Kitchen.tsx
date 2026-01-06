@@ -168,8 +168,8 @@ export default function AdminDashboard() {
 
         <div class="table-header">
           <div style="flex: 1;">Tên món</div>
-          <div style="width: 30px; text-align: center;">SL </div>
-          <div style="width: 70px; text-align: right;">T.Tiền</div>
+          <div style="width: 30px; text-align: center;">SL</div>
+          <div style="width: 75px; text-align: right;">T.Tiền</div>
         </div>
 
         <div>${itemsHtml}</div>
