@@ -22,7 +22,10 @@ button:active {
 }
 
 body {
-  background-color: #f8fafc; /* Màu nền xám nhẹ nhàng cho Admin */
+  @apply bg-gray-50 text-slate-900 transition-colors duration-300;
+}
+.dark body {
+  @apply bg-slate-900 text-slate-100;
 }
 @layer base {
   /* Hiệu ứng cho tất cả các nút */

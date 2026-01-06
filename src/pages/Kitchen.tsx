@@ -31,6 +31,10 @@ export default function AdminDashboard() {
   })
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [audio] = useState(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem('theme') === 'dark' ||
+    (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  );
 
   // --- KIỂM TRA QUYỀN TRUY CẬP ---
   useEffect(() => {
@@ -41,6 +45,16 @@ export default function AdminDashboard() {
       setIsAuthorized(true);
     }
   }, [navigate]);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   // --- CÁC HÀM FETCH DỮ LIỆU (Đã bọc useCallback để hết báo đỏ) ---
   const fetchReport = useCallback(async () => {
@@ -299,6 +313,12 @@ export default function AdminDashboard() {
                 className={`p-2 rounded-xl transition-all ${isSoundEnabled ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400'}`}
               >
                 {isSoundEnabled ? "🔔" : "🔕"}
+              </button>
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-yellow-400 transition-all"
+              >
+                {darkMode ? '☀️' : '🌙'}
               </button>
 
               <button
