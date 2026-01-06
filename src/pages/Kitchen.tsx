@@ -217,7 +217,7 @@ export default function AdminDashboard() {
                   className={`px-2 py-1.5 sm:px-3 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeTab === tab ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-400'
                     }`}
                 >
-                  {tab === 'orders' ? 'Đơn' : tab === 'menu' ? 'Kho' : 'Báo cáo'}
+                  {tab === 'orders' ? 'Đơn Hàng' : 'Thực Đơn'}
                 </button>
               ))}
             </div>
