@@ -271,7 +271,7 @@ export default function AdminDashboard() {
   if (!isAuthorized) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-slate-900 pb-20 font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800 text-slate-900 pb-20 font-sans">
       <nav className="bg-white border-b sticky top-0 z-50 p-2 md:p-4 shadow-sm">
         <div className="max-w-6xl mx-auto flex flex-col gap-2 md:flex-row md:justify-between md:items-center">
 
