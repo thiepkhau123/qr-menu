@@ -210,7 +210,7 @@ export default function AdminDashboard() {
             </h1>
 
             <div className="flex bg-gray-100 p-1 rounded-xl">
-              {(['orders', 'menu', 'report'] as const).map(tab => (
+              {(['orders', 'menu'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
