@@ -205,7 +205,7 @@ export default function AdminDashboard() {
 
           {/* Dòng 1: Logo và Tabs (Tối ưu để không bị tràn) */}
           <div className="flex items-center justify-between md:justify-start gap-2">
-            <h1 className="font-black text-orange-600 text-sm sm:text-base md:text-xl uppercase italic tracking-tighter shrink-0">
+            <h1 className="font-black text-orange-600 text-xl sm:text-2xl md:text-4xl uppercase italic tracking-tighter shrink-0 leading-none">
               NHƯ NGỌC ADMIN
             </h1>
 
