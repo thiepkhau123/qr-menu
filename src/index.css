@@ -57,33 +57,38 @@ body {
   filter: blur(2px); /* Làm mờ khói để trông thật hơn */
 }
 
-/* Tạo hình làn khói mờ */
+/* Tạo hình làn khói mờ - ĐÃ LÀM ĐẬM */
 .steam-line {
-  width: 6px;
+  width: 8px; /* Tăng độ dày một chút */
   height: 40px;
-  background: rgba(200, 200, 200, 0.4);
-  filter: blur(5px);
+  /* Thay đổi từ rgba(200,200,200,0.4) sang màu xám đậm hơn và đặc hơn */
+  background: linear-gradient(to top, rgba(100, 100, 100, 0.8), rgba(150, 150, 150, 0)); 
+  filter: blur(3px); /* Giảm độ mờ từ 5px xuống 3px để khói "đặc" và rõ hơn */
   border-radius: 50%;
-  animation: steam-rise 2s infinite ease-in-out;
+  animation: steam-rise 2.5s infinite ease-in-out; /* Chỉnh tốc độ chậm lại xíu cho thực tế */
+  position: absolute;
+  bottom: 100%; /* Đảm bảo khói bắt đầu từ mặt trên tô mì */
 }
 
-.line-1 { animation-delay: 0.2s; height: 30px; }
-.line-2 { animation-delay: 0.6s; height: 50px; width: 8px; }
-.line-3 { animation-delay: 1s; height: 35px; }
+/* Điều chỉnh vị trí các sợi khói để không dính chùm */
+.line-1 { left: 20%; animation-delay: 0.2s; height: 40px; }
+.line-2 { left: 50%; animation-delay: 0.8s; height: 60px; width: 10px; }
+.line-3 { left: 80%; animation-delay: 1.4s; height: 45px; }
 
 @keyframes steam-rise {
   0% {
-    transform: translateY(20px) scaleX(1) rotate(0deg);
+    transform: translateY(10px) scaleX(1) rotate(0deg);
     opacity: 0;
   }
-  30% {
-    opacity: 0.8;
+  20% {
+    opacity: 0.7; /* Khói hiện rõ nhanh hơn */
   }
   50% {
-    transform: translateY(0px) scaleX(1.5) rotate(5deg);
+    transform: translateY(-20px) scaleX(1.8) rotate(10deg);
+    opacity: 0.5;
   }
   100% {
-    transform: translateY(-40px) scaleX(2) rotate(-10deg);
+    transform: translateY(-60px) scaleX(2.5) rotate(-15deg);
     opacity: 0;
   }
 }
